@@ -14,15 +14,17 @@ Ejemplos rápidos:
     log_error("dataset_b2", "UPDATE")
 """
 
-import datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
 OperationType = Literal["INSERT", "UPDATE", "DELETE"]
 OperationStatus = str | None
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-LOGS_DIR = BASE_DIR / "logs"
+MODULE_PATH = Path(__file__).resolve()
+SRC_DIR = MODULE_PATH.parent
+PROJECT_ROOT = SRC_DIR.parent
+LOGS_DIR = PROJECT_ROOT / "logs"
 LOG_FILE_PATH = LOGS_DIR / "operations.log"
 
 def _current_timestamp() -> str:
@@ -31,7 +33,7 @@ def _current_timestamp() -> str:
     Returns:
         str: Fecha y hora actual formateada como "YYYY-MM-DD HH:MM:SS".
     """
-    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def _escape_log_entry(value: str | None) -> str:
     """Escapa caracteres problemáticos en una entrada de log.
@@ -43,7 +45,13 @@ def _escape_log_entry(value: str | None) -> str:
         str: El valor escapado, con saltos de línea reemplazados
         por espacios, tuberías eliminadas y espacios extra recortados.
     """
-    return value.replace("\n", " ").replace("\r", " ").replace("|", "").strip() if value else ""
+    if value is None:
+        return ""
+
+    cleaned = value.strip()
+    for old, new in (("\n", " "), ("\r", " "), ("|", "")):
+        cleaned = cleaned.replace(old, new)
+    return cleaned
 
 def _validate_records_count(records_count: object) -> int:
     if isinstance(records_count, bool) or not isinstance(records_count, int):
