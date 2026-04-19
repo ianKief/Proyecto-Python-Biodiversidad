@@ -31,7 +31,7 @@ def imprimir_primeras_10_filas(dataset,archivo,delimitador=","):
         lector = csv.DictReader(archivo_in, delimiter=delimitador)
 
         with open(ruta_out, 'w', encoding='utf-8', newline='') as archivo_out:
-            escritor = csv.DictWriter(archivo_out, fieldnames=lector.fieldnames, delimiter=delimitador)
+            escritor = csv.DictWriter(archivo_out, fieldnames=lector.fieldnames, delimiter=",")
             escritor.writeheader()
             
             for i, fila in enumerate(lector):
