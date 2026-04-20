@@ -20,11 +20,24 @@ def obtener_ruta(nombre_dataset, nombre_archivo):
     return ruta_in, ruta_out
 
 def listar_columnas(dataset,archivo,delimitador=","):
+    
+    """Retorna una lista con los nombres de cada columna del dataset"""
+    
     ruta_in, _ = obtener_ruta(dataset,archivo)
     if not ruta_in:
         return None
     with open(ruta_in, "r", encoding='utf-8') as archivo_in:
         return list(csv.DictReader(archivo_in,delimiter=delimitador).fieldnames)
+    
+def posicion_columnas(dataset,archivo,delimitador=","):
+    
+    """ Retorna un diccionario con la posicion de cada columna"""
+    
+    columnas = listar_columnas(dataset,archivo,delimitador)
+    if not columnas:
+        return {}
+    
+    return {indice: nombre for indice,nombre in enumerate(columnas)}
     
 def imprimir_primeras_10_filas(dataset,archivo,delimitador=","):
 
