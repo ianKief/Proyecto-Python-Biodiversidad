@@ -19,6 +19,13 @@ def obtener_ruta(nombre_dataset, nombre_archivo):
         return None, None
     return ruta_in, ruta_out
 
+def listar_columnas(dataset,archivo,delimitador=","):
+    ruta_in, _ = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return None
+    with open(ruta_in, "r", encoding='utf-8') as archivo_in:
+        return list(csv.DictReader(archivo_in,delimiter=delimitador).fieldnames)
+    
 def imprimir_primeras_10_filas(dataset,archivo,delimitador=","):
 
     """Imprime las primeras 10 filas de un dataset en un archivo .csv"""
