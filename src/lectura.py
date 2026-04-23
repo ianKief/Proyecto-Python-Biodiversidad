@@ -59,3 +59,17 @@ def imprimir_primeras_10_filas(dataset,archivo,delimitador=","):
                     escritor.writerow(fila)
                 else:
                     break
+
+def cant_registros(dataset,archivo,delimitador=","):
+
+    """Retorna la cantidad de registros del dataset"""
+
+    ruta_in, _ = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return None
+    with open(ruta_in,'r',encoding='utf-8') as archivo_in:
+        lector = csv.reader(archivo_in,delimiter=delimitador)
+        for i,fila in enumerate(lector):
+            continue
+        return i
+
