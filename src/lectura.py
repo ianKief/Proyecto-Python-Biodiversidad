@@ -73,3 +73,21 @@ def cant_registros(dataset,archivo,delimitador=","):
             continue
         return i
 
+def columnas_con_nulo(dataset,archivo,delimitador=","):
+    
+    """Retorna las columnas que tienen un dato con al menos un registro nulo"""
+
+    ruta_in, _ = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return None
+    columnas_sucias = set()
+
+    with open(ruta_in,'r',encoding='utf-8') as archivo_in:
+        lector = csv.DictReader(archivo_in,delimiter=delimitador)
+
+        for fila in lector:
+            for columna,valor in fila.items():
+                if not valor or valor.strip()=="":
+                    columnas_sucias.add(columna)
+
+    return columnas_sucias
