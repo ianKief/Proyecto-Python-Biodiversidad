@@ -149,3 +149,14 @@ def frecuencia_valores_columna(dataset,archivo,columna,delimitador=','):
                 frecuencia_valores[valor] = frecuencia_valores.get(valor, 0) + 1
 
     return frecuencia_valores
+
+def columnas_nulas(dataset,archivo,delimitador=','):
+    
+    """Retorna las columnas que tienen todos sus registros nulos"""
+
+    columnas = columnas_con_nulo(dataset,archivo,delimitador)
+    if not columnas:
+        return "No se pudo determinar las columnas nulas"
+    
+    cant_reg = cant_registros(dataset,archivo,delimitador)
+    return list(columna for columna, nulos in columnas.items() if nulos == cant_reg)
