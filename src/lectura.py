@@ -130,3 +130,27 @@ def valores_dif_columna(dataset,archivo,columna,delimitador=','):
                 valores_distintos.add(valor)
 
     return f"La columna '{columna}' tiene {len(valores_distintos)} valores distintos"
+
+def frecuencia_valores_columna(dataset,archivo,columna,delimitador=','):
+    
+    """Retorna un diccionario con la frecuencia de cada valor distinto que tiene la columna ingresada por parametro
+    
+    Si la columna no existe, se informa la situación"""
+
+    ruta_in, _ = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return "No se encontro el archivo ingresado"
+    
+    with open(ruta_in,'r',encoding='utf-8') as archivo_in:
+        lector = csv.DictReader(archivo_in,delimiter=delimitador)
+        if columna not in lector.fieldnames:
+            return f"La columna '{columna}' no existe en el dataset"
+        
+        frecuencia_valores = {}
+        valores_invalidos = {"N/A", "N/A N/A"}
+        for fila in lector:
+            valor = fila[columna].strip() #Limpiar el valor para que sea consistente
+            if valor and valor.upper() not in valores_invalidos:  #Ignorar valores vacíos y no válidos
+                frecuencia_valores[valor] = frecuencia_valores.get(valor, 0) + 1
+
+    return frecuencia_valores
