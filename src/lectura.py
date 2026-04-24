@@ -97,11 +97,6 @@ def promedio_nulos(dataset,archivo,delimitador=','):
 
     """Retorna el promedio de registros nulos para cada columna del dataset"""
 
-    ruta_in, _ = obtener_ruta(dataset,archivo)
-    if not ruta_in:
-        return "No se encontro el archivo ingresado"
-    
-    
     cant_reg = cant_registros(dataset,archivo,delimitador)
     columnas = columnas_con_nulo(dataset,archivo,delimitador)
     if not cant_reg or not columnas:
