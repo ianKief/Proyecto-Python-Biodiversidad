@@ -66,7 +66,7 @@ def cant_registros(dataset,archivo,delimitador=","):
 
     ruta_in, _ = obtener_ruta(dataset,archivo)
     if not ruta_in:
-        return None
+        return 0
     with open(ruta_in,'r',encoding='utf-8') as archivo_in:
         lector = csv.reader(archivo_in,delimiter=delimitador)
         for i,fila in enumerate(lector):
@@ -75,19 +75,20 @@ def cant_registros(dataset,archivo,delimitador=","):
 
 def columnas_con_nulo(dataset,archivo,delimitador=","):
     
-    """Retorna las columnas que tienen un dato con al menos un registro nulo"""
+    """Retorna la cantidad de registros nulos que tiene cada columna del dataset"""
 
     ruta_in, _ = obtener_ruta(dataset,archivo)
     if not ruta_in:
         return None
-    columnas_sucias = set()
 
     with open(ruta_in,'r',encoding='utf-8') as archivo_in:
         lector = csv.DictReader(archivo_in,delimiter=delimitador)
-
+        #Creo un diccionario para manejar un contador con la cantidad de nulos que tiene cada columna
+        columnas_sucias = {col:0 for col in lector.fieldnames}
+        
         for fila in lector:
             for columna,valor in fila.items():
                 if not valor or valor.strip()=="":
-                    columnas_sucias.add(columna)
+                    columnas_sucias[columna] += 1
 
     return columnas_sucias
