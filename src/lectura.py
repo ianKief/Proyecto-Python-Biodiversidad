@@ -107,3 +107,26 @@ def promedio_nulos(dataset,archivo,delimitador=','):
     if not cant_reg or not columnas:
         return "No se pudo calcular el promedio de nulos"
     return {columna: (columnas[columna]/cant_reg) for columna in columnas}
+
+def valores_dif_columna(dataset,archivo,columna,delimitador=','):
+    
+    """Retorna la cantidad de valores distintos que tiene la columna ingresada por parametro
+    
+    Si la columna no existe, se informa la situación"""
+
+    ruta_in, _ = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return "No se encontro el archivo ingresado"
+    
+    with open(ruta_in,'r',encoding='utf-8') as archivo_in:
+        lector = csv.DictReader(archivo_in,delimiter=delimitador)
+        if columna not in lector.fieldnames:
+            return f"La columna '{columna}' no existe en el dataset"
+        
+        valores_distintos = set()
+        for fila in lector:
+            valor = fila[columna].strip() #Limpiar el valor para que sea consistente
+            if valor:  #Ignorar valores vacíos
+                valores_distintos.add(valor)
+
+    return f"La columna '{columna}' tiene {len(valores_distintos)} valores distintos"
