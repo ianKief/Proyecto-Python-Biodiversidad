@@ -32,4 +32,13 @@ pip install -r requirements.txt
 jupyter notebook
 ```
 Se abrira un host local en el navegador con el directorio del proyecto, se debe ingresar a la carpeta **notebooks** y ejecutar el que desee.
+
 *Los datasets que desee probar deben estar subidos en la carpeta **raw_datasets**, de lo contrario el notebook no funcionará.*
+
+### 4.2 Streamlit
+
+```bash
+streamlit run app.py
+```
+
+Se abrira un host local en el navegador con la pagina desarrollada en el proyecto.
