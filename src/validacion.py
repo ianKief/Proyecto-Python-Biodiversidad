@@ -97,3 +97,32 @@ def existe(dataset,archivo,delimitador=","):
         print("\n")
                 
         return registros_incorrectos
+
+def duplicados(dataset,archivo,delimitador=","):
+
+    """Funcion que revisa si hay duplicados en el archivo y los IDs repetidos"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    
+    with open(rute_in,'r',encoding='utf-8') as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        dupli=0
+        reg_duplicados=[]
+        registros=set()
+        campo_ID=datos.fieldnames[0]
+        for fila in datos:
+            if (fila[campo_ID] in registros):
+                if(fila[campo_ID] in reg_duplicados):
+                    dupli+=1
+                else:
+                    dupli+=1
+                    reg_duplicados.append(fila[campo_ID])
+            else:
+                registros.add(fila[campo_ID])
+        print(f"en el dataset: {dataset} hay {dupli} registros duplicados, con los siguientes ID: {reg_duplicados}")
+        print("\n")
+
+
+    return reg_duplicados
