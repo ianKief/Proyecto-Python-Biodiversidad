@@ -19,31 +19,18 @@ def ruta(dataset,archivo):
         return None
     return rute_in
 
-def latitud(latitude):
+def verificar_rango(dato,max,min):
 
-    """Funcion que valida la latitud de un registro"""
+    """Verifica si el dato del campo esta vacio o no y lo verifica si tiene un valor"""
 
-    if(latitude is None or latitude.strip() == ""):
-        return False
+    if(dato is None or dato.strip() == ""):
+        return True
     else:
-        latitude=float(latitude)
-        if(latitude<-90 or latitude>90):
-            return True
-        else:
+        dato=float(dato)
+        if(dato <=max and dato>=min):
             return False
-    
-def longitud(longitude):
-
-    """Funcion que valida la longitud de un registro"""
-
-    if(longitude is None or longitude.strip() == ""):
-        return False
-    else:
-        longitude=float(longitude)
-        if(longitude<-180 or longitude>180):
-            return True
         else:
-            return False
+            return True
 
 def coordenadas(dataset,archivo,delimitadror=","):
 
@@ -58,19 +45,26 @@ def coordenadas(dataset,archivo,delimitadror=","):
         cant_invalidos=0
         registros_incorrectos=[]
         datos=csv.DictReader(archivo,delimiter=delimitadror)
+
         latitude=[datos for datos in datos.fieldnames if "latitude" in datos.lower()][0]
         longitude=[datos for datos in datos.fieldnames if "longitude" in datos.lower()][0]
+
+        maximo_latitud=90
+        minimo_latitud=-90
+        maximo_longitud=180
+        minimo_longitud=-180
+
         print(dataset)
         for fila in datos:
-            if(latitud(fila[latitude])):
+            if(verificar_rango(fila[latitude],maximo_latitud,minimo_latitud))):
                 cant_invalidos+=1
                 registros_incorrectos.append(fila)
-            if(longitud(fila[longitude])):
+            if(verificar_rango(fila[longitude],maximo_longitud,minimo_longitud)):
                 if(not (fila in registros_incorrectos)):
                     cant_invalidos+=1
                     registros_incorrectos.append(fila)
 
-        print(f"en el dataset: {dataset} hay {cant_invalidos} coordenadas invalidas {registros_incorrectos}")
+        print(f"en el dataset: {dataset} hay {cant_invalidos} coordenadas invalidas")
         print(" \n")
 
     return registros_incorrectos, cant_invalidos
@@ -154,3 +148,34 @@ def incertidumbre(dataset,archivo,delimitador=","):
                     elif(valor>1000):
                         invalidos["muy_alto"].append(fila)
     return invalidos
+
+def max_min(dataset,archivo,delimitador=","):
+
+    """Funcion que setea rangos propios y verifica que los datos esten dentro de ese rango"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    
+    with open(rute_in,'r',encoding='utf-8') as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        registros_invalidos=[]
+
+        latitude=[datos for datos in datos.fieldnames if "latitude" in datos.lower()][0]
+        longitude=[datos for datos in datos.fieldnames if "longitude" in datos.lower()][0]
+
+        maximo_latitud=70
+        minimo_latitud=-70
+        maximo_longitud=160
+        minimo_longitud=-160
+
+        print(dataset)
+        for fila in datos:
+            if(verificar_rango(fila[latitude],maximo_latitud,minimo_latitud)):
+                registros_invalidos.append(fila)
+
+            if(verificar_rango(fila[longitude],maximo_longitud,minimo_longitud)):
+                if(fila not in registros_invalidos):
+                    registros_invalidos.append(fila)
+
+    return registros_invalidos
