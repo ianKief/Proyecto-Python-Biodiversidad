@@ -126,3 +126,31 @@ def duplicados(dataset,archivo,delimitador=","):
 
 
     return reg_duplicados
+
+def incertidumbre(dataset,archivo,delimitador=","):
+
+    """Funcion que guarda los registros en los que el valor del campo pedido no es un numero, es negativo o es muy alto(ejemplo>1000)"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    
+    with open(rute_in,'r',encoding='utf-8') as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        invalidos={"no_numeros":[],
+                   "negativos":[],
+                   "muy_alto":[]
+                  }
+        if("coordinateUncertaintyInMeters" not in datos.fieldnames):
+            print(f"El campo coordinateUncertaintyInMeters no existe en {dataset}")
+        else:
+            for fila in datos:
+                if (fila["coordinateUncertaintyInMeters"] is None or fila["coordinateUncertaintyInMeters"].strip() == ""):
+                    invalidos["no_numeros"].append(fila)
+                else:
+                    valor=float(fila["coordinateUncertaintyInMeters"])
+                    if(valor <0):
+                        invalidos["negativos"].append(fila)
+                    elif(valor>1000):
+                        invalidos["muy_alto"].append(fila)
+    return invalidos
