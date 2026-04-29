@@ -66,12 +66,34 @@ def coordenadas(dataset,archivo,delimitadror=","):
                 cant_invalidos+=1
                 registros_incorrectos.append(fila)
             if(longitud(fila[longitude])):
-                cant_invalidos+=1
-                registros_incorrectos.append(fila)
+                if(not (fila in registros_incorrectos)):
+                    cant_invalidos+=1
+                    registros_incorrectos.append(fila)
 
         print(f"en el dataset: {dataset} hay {cant_invalidos} coordenadas invalidas {registros_incorrectos}")
         print(" \n")
 
     return registros_incorrectos, cant_invalidos
 
+def existe(dataset,archivo,delimitador=","):
+
+    """Funcion que valida la existencia de latitud pero no longitud, y longitud pero no latitud en los registros del dataset"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
     
+    with open(rute_in,'r',encoding='utf-8') as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        registros_incorrectos=[]
+        latitude=[datos for datos in datos.fieldnames if "latitude" in datos.lower()][0]
+        longitude=[datos for datos in datos.fieldnames if "longitude" in datos.lower()][0]
+        print(dataset)
+        for fila in datos:
+            if(not (fila[latitude] is None or fila[latitude].strip() == "") and (fila[longitude] is None or fila[longitude].strip() == "")):
+                registros_incorrectos.append(fila)
+            if((fila[latitude] is None or fila[latitude].strip() == "") and not (fila[longitude] is None or fila[longitude].strip() == "")):
+                registros_incorrectos.append(fila)
+        print("\n")
+                
+        return registros_incorrectos
