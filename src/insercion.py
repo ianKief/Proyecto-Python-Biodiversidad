@@ -1,6 +1,8 @@
-from lectura import listar_columnas
+from lectura import listar_columnas, obtener_ruta
 from validacion import verificar_rango
 import uuid
+import csv
+
 
 def crear_estructura_registro(dataset, archivo, delimitador="\t"):
     
@@ -88,3 +90,58 @@ def preparar_registro_para_csv(registro, estructura_4A):
         fila.append("" if valor is None else valor)
 
     return fila
+
+def insertar_registro(dataset, archivo, delimitador="\t"):
+    """
+    Lee el dataset, pide un registro por teclado, lo valida e inserta en processed_datasets/.
+    """
+    # 1. rutas
+    ruta_in, ruta_out = obtener_ruta(dataset, archivo)
+    if not ruta_in:
+        return
+
+    # 2. estructura de registro (4.A)
+    estructura = crear_estructura_registro(dataset, archivo, delimitador)
+
+    # 3. registro vacío (4.B)
+    registro = generar_registro_vacio(estructura)
+
+    print("\n=== Ingreso de datos ===")
+    for col in estructura:
+        valor = input(f"{col}: ")
+        valor = valor.replace("\n", " ").replace("\r", " ").replace("\t", " ")
+        registro[col] = valor.strip()
+
+    # 4. validar registro (4.C)
+    es_valido, errores = validar_registro(registro)
+    if not es_valido:
+        print("\n⚠ El registro tiene errores y NO fue insertado:")
+        for error in errores:
+            print(f"  - {error}")
+        return False
+
+    # 5. preparar fila (4.D)
+    nueva_fila = preparar_registro_para_csv(registro, estructura)
+
+    # 6. leer dataset original
+    if ruta_out.exists():
+        with open(ruta_out, encoding="utf-8") as f:
+            lector = list(csv.reader(f, delimiter=delimitador))
+    else:
+        with open(ruta_in, encoding="utf-8") as f:
+            lector = list(csv.reader(f, delimiter=delimitador))
+
+    arch = lector
+
+    # 7. escribir nuevo archivo
+    ruta_out.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(ruta_out, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter=delimitador)
+        writer.writerows(arch)
+        writer.writerow(nueva_fila)
+
+    print(f"\n✔ Registro insertado en: {ruta_out}")
+    return True
+
+
