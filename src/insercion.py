@@ -1,4 +1,5 @@
 from lectura import listar_columnas
+from validacion import verificar_rango
 
 def crear_estructura_registro(dataset, archivo, delimitador="\t"):
     
