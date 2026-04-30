@@ -20,12 +20,12 @@ def generar_registro_vacio(columnas):
     return {col: None for col in columnas}
 
 def validar_registro(registro):
-
-    """ Valida un registro individual antes de insertarlo en el dataset. Reutiliza verificar_rango() del módulo de validación (ejercicio 3)"""
-
+    """
+    Valida un registro individual antes de insertarlo en el dataset.
+    Reutiliza verificar_rango() del módulo de validación (ejercicio 3).
+    """
     errores = []
 
-    # Detectar automáticamente nombres de latitud/longitud
     columnas = registro.keys()
 
     latitud = [col for col in columnas if "latitude" in col.lower()]
@@ -44,14 +44,21 @@ def validar_registro(registro):
     if campo_lon and verificar_rango(valor_lon, 180, -180):
         errores.append("Longitud inválida")
 
-    # Reutiliza lógica existe (3.B)
+    # Reutiliza lógica existe
     if valor_lat.strip() != "" and valor_lon.strip() == "":
         errores.append("Existe latitud pero falta longitud")
 
     if valor_lon.strip() != "" and valor_lat.strip() == "":
         errores.append("Existe longitud pero falta latitud")
 
-    # Reutiliza incertidumbre (3.F)
+    # Reutiliza lógica max_min
+    if campo_lat and verificar_rango(valor_lat, 70, -70):
+        errores.append("Latitud fuera del rango de Sudamérica")
+
+    if campo_lon and verificar_rango(valor_lon, 160, -160):
+        errores.append("Longitud fuera del rango de Sudamérica")
+
+    # Reutiliza logica incertidumbre
     if "coordinateUncertaintyInMeters" in registro:
         incertidumbre = registro["coordinateUncertaintyInMeters"]
 
