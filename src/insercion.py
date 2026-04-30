@@ -144,4 +144,88 @@ def insertar_registro(dataset, archivo, delimitador="\t"):
     print(f"\n✔ Registro insertado en: {ruta_out}")
     return True
 
+def insertar_multiples_registros(dataset, archivo, delimitador="\t"):
+    """
+    Ejercicio 4.G
+    Extiende 4.F permitiendo ingresar múltiples registros
+    en una sola ejecución.
 
+    Lee dataset original o procesado, permite ingresar varios
+    registros por teclado, valida cada uno y agrega solo los válidos.
+    """
+
+    # 1. rutas
+    ruta_in, ruta_out = obtener_ruta(dataset, archivo)
+    if not ruta_in:
+        return False
+
+    # 2. estructura (4.A)
+    estructura = crear_estructura_registro(dataset, archivo, delimitador)
+
+    # 3. leer archivo base
+    if ruta_out.exists():
+        with open(ruta_out, encoding="utf-8") as f:
+            lector = list(csv.reader(f, delimiter=delimitador))
+    else:
+        with open(ruta_in, encoding="utf-8") as f:
+            lector = list(csv.reader(f, delimiter=delimitador))
+
+    arch = lector[:]
+
+    # 4. lista de nuevos registros válidos
+    nuevos_registros = []
+
+    print("\n=== Inserción múltiple de registros ===")
+
+    while True:
+
+        # registro vacío (4.B)
+        registro = generar_registro_vacio(estructura)
+
+        print("\n--- Nuevo registro ---")
+
+        # ingreso por teclado
+        for col in estructura:
+            valor = input(f"{col}: ")
+            valor = valor.replace("\n", " ").replace("\r", " ").replace("\t", " ")
+            registro[col] = valor.strip()
+
+        # validar (4.C)
+        es_valido, errores = validar_registro(registro)
+
+        if es_valido:
+            nueva_fila = preparar_registro_para_csv(registro, estructura)
+            nuevos_registros.append(nueva_fila)
+
+            print("✔ Registro válido agregado a la operación.")
+        else:
+            print("\n⚠ Registro inválido. NO fue agregado:")
+            for error in errores:
+                print(f"  - {error}")
+
+        # continuar o terminar
+        continuar = input(
+            "\n¿Desea ingresar otro registro? (s/n): "
+        ).strip().lower()
+
+        if continuar != "s":
+            break
+
+    # 5. escribir archivo final
+    ruta_out.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(ruta_out, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, delimiter=delimitador)
+
+        # datos previos
+        writer.writerows(arch)
+
+        # nuevos registros
+        writer.writerows(nuevos_registros)
+
+    print(
+        f"\n✔ Se insertaron {len(nuevos_registros)} registros en: {ruta_out}"
+    )
+
+    return True
+    
