@@ -160,3 +160,35 @@ def columnas_nulas(dataset,archivo,delimitador=','):
     
     cant_reg = cant_registros(dataset,archivo,delimitador)
     return list(columna for columna, nulos in columnas.items() if nulos == cant_reg)
+
+def valores_max_min(dataset,archivo,columna,tipo,delimitador=','):
+
+    """
+    Revisa el campo columna y dependiendo su tipo, retorna:
+    - int: el valor minimo, el valor maximo y el promedio
+    - str: cantidad de caracteres del texto mas corto y del mas largo encontrados
+    - coordenada: el menor y mayor valor encontrados
+        -> formato coordenada DD: (latitud,longitud) --> (41.40338,-2.17403)
+    """
+
+    def es_coord_valida(valor):
+        """Revisa que el valor ingresado por parametro sea una coordenada en formato DD"""
+        if not (10 >= len(valor) >= 7): # Cant total de caracteres debe ser entre 7 y 10
+            return False
+        test_chars = valor.replace(".","").replace("-","")
+        if not test_chars.isDigit(): # Quito puntos y - a ver si contiene otros caracteres (que serian invalidos)
+            return False
+        if "." not in valor: # Chequeo que contenga el . obligatorio
+            return False
+
+    ruta_in, _ = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return "No se encontro el archivo ingresado"
+    with open(ruta_in,'r',encoding='utf-8') as archivo_in:
+        lector = csv.DictReader(archivo_in,delimiter=delimitador)
+        if columna not in lector.fieldnames:
+            return "La columna ingresada no existe en el dataset"
+        if type(lector[columna]) != tipo or tipo.lower() != "coordenada":
+            return "El tipo ingresado no coincide con el tipo de dato de la columna ingresada"
+        if tipo.lower() == "coordenada":
+            "..."
