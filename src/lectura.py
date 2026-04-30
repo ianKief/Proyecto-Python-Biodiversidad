@@ -5,14 +5,15 @@ Este modulo se encarga de la lectura y procesamiento basico de la informacion de
 """
 from pathlib import Path
 import csv
+import os
 
 def obtener_ruta(nombre_dataset, nombre_archivo):
 
     """Obtiene la ruta de entrada del dataset original y la ruta de salida del dataset procesado"""
 
     raiz = Path(__file__).parent.parent
-    ruta_in = raiz / 'raw_datasets' / nombre_dataset / nombre_archivo
-    ruta_out = raiz / 'processed_datasets' / f"{nombre_dataset}_procesado.csv"
+    ruta_in = Path(os.path.join(raiz, 'raw_datasets', nombre_dataset, nombre_archivo))
+    ruta_out = Path(os.path.join(raiz, 'processed_datasets', f"{nombre_dataset}_procesado.csv"))
 
     if not ruta_in.exists():
         print(f"Error: El archivo {ruta_in} no existe.")
