@@ -1,5 +1,6 @@
 from lectura import listar_columnas
 from validacion import verificar_rango
+import uuid
 
 def crear_estructura_registro(dataset, archivo, delimitador="\t"):
     
@@ -72,3 +73,18 @@ def validar_registro(registro):
                 )
 
     return len(errores) == 0, errores
+
+def preparar_registro_para_csv(registro, estructura_4A):
+    """
+    Convierte el registro en una lista lista para escribir en el CSV.
+    Genera el ID automáticamente.
+    """
+    fila = []
+    nuevo_id = str(uuid.uuid4())
+    fila.append(nuevo_id)
+
+    for col in estructura_4A:
+        valor = registro.get(col)
+        fila.append("" if valor is None else valor)
+
+    return fila
