@@ -8,3 +8,10 @@ def crear_estructura_registro(dataset, archivo, delimitador="\t"):
     if not columnas:
         return None
     return columnas[1:]
+
+def generar_registro_vacio(columnas):
+
+    """Genera un registro vacío con todas las columnas en None."""
+    
+    return {col: None for col in columnas}
+
