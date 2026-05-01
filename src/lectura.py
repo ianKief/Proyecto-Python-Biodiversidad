@@ -166,30 +166,79 @@ def valores_max_min(dataset,archivo,columna,tipo,delimitador=','):
 
     """
     Revisa el campo columna y dependiendo su tipo, retorna:
-    - int: el valor minimo, el valor maximo y el promedio
-    - str: cantidad de caracteres del texto mas corto y del mas largo encontrados
-    - coordenada: el menor y mayor valor encontrados
+    - numeric (int): el valor minimo, el valor maximo y el promedio
+    - text (str): cantidad de caracteres del texto mas corto y del mas largo encontrados
+    - coordinate: el menor y mayor valor encontrados
         -> formato coordenada DD: (latitud,longitud) --> (41.40338,-2.17403)
     """
 
     def es_coord_valida(valor):
+        
         """Revisa que el valor ingresado por parametro sea una coordenada en formato DD"""
-        if not (10 >= len(valor) >= 7): # Cant total de caracteres debe ser entre 7 y 10
+        if len(valor) not in range(5,19): # Cant total de caracteres debe ser entre 5 y 20
             return False
         test_chars = valor.replace(".","").replace("-","")
-        if not test_chars.isDigit(): # Quito puntos y - a ver si contiene otros caracteres (que serian invalidos)
+        if not test_chars.isdigit(): # Quito puntos y - a ver si contiene otros caracteres (que serian invalidos)
             return False
         if "." not in valor: # Chequeo que contenga el . obligatorio
             return False
+        return True
+
 
     ruta_in, _ = obtener_ruta(dataset,archivo)
     if not ruta_in:
         return "No se encontro el archivo ingresado"
+    
+    # Variables de seguimiento
+    min_val = float('inf')
+    max_val = float('-inf')
+    suma_total = 0
+    contador = 0
+    tipo = tipo.lower() # Normalizo el tipo para manejarlo de manera consistente
+    
+    if tipo not in ("coordinate", "numeric", "text"):
+        return "El tipo ingresado no es valido"
+    
     with open(ruta_in,'r',encoding='utf-8') as archivo_in:
         lector = csv.DictReader(archivo_in,delimiter=delimitador)
+        
         if columna not in lector.fieldnames:
             return "La columna ingresada no existe en el dataset"
-        if type(lector[columna]) != tipo or tipo.lower() != "coordenada":
-            return "El tipo ingresado no coincide con el tipo de dato de la columna ingresada"
-        if tipo.lower() == "coordenada":
-            "..."
+        
+        for fila in lector:
+            valor = fila[columna].strip() #Limpiar el valor para que sea consistente
+            if not valor:
+                continue
+            
+            if tipo == "coordinate":
+                if es_coord_valida(valor):
+                    num = float(valor)
+                    min_val = min(min_val, num)
+                    max_val = max(max_val, num)
+            
+            elif tipo == "numeric":
+                try:
+                    num = float(valor)
+                    min_val = min(min_val, num)
+                    max_val = max(max_val, num)
+                    suma_total += num
+                    contador += 1
+                except ValueError:
+                    continue
+            
+            elif tipo == "text":
+                min_val = min(min_val, len(valor))
+                max_val = max(max_val, len(valor))
+    
+    if min_val == float('inf'):
+        return "No se encontro ningun valor valido en la columna ingresada"
+    
+    if tipo == "numeric":
+        promedio = suma_total / contador if contador > 0 else 0
+        return {"Valor minimo": min_val, "Valor maximo": max_val, "Promedio": promedio}
+    
+    elif tipo == "coordinate":
+        return {"Coordenada minima": min_val, "Coordenada maxima": max_val}
+    
+    elif tipo == "text":
+        return {"Texto mas corto": int(min_val), "Texto mas largo": int(max_val)}
