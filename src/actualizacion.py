@@ -27,7 +27,7 @@ def buscar_registros(dataset,archivo,columnas,delimitador=","):
 def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","):
 
     """Actualiza el valor de una columna para un registro específico identificado por 'id'.
-    'id' es el valor de la columna que identifica al registro a actualizar.
+    'id' es el nombre de la columna que identifica al registro a actualizar y 'valorID' es el valor de esa columna.
     'columna' es el nombre de la columna a actualizar y 'valor' es el nuevo valor que se asignará a esa columna.
     """
 
@@ -60,3 +60,45 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
         escritor.writeheader()
         escritor.writerows(registros_actualizados)
     return "Columna actualizada exitosamente"
+
+def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimitador=","):
+
+    """Actualiza el valor de varias columnas para un registro específico identificado por 'id'.
+    'id' es el nombre de la columna que identifica al registro a actualizar y 'valorID' es el valor de esa columna.
+    'nuevos_valores' es un diccionario con el formato {columna:valor} donde columna es el nombre de la columna a actualizar y valor es el nuevo valor de esa columna.
+    """
+
+    ruta_in, ruta_out = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return "No se encontro el archivo ingresado"
+
+    actualizado = False
+    registros_actualizados = []
+
+    # Primero se lee el archivo original en busqueda del registro que se quiere modificar, verificando que existan el registro y la columna a modificar
+    with open(ruta_in, 'r', encoding='utf-8') as archivo_in:
+        lector = csv.DictReader(archivo_in, delimiter=delimitador)
+        campos = lector.fieldnames
+        if not id in campos:
+            return "La columna de identificación no existe"
+            
+        for col in nuevos_valores.keys():
+            if col not in campos:
+                return f"La columna {col} no existe en el dataset" 
+        
+        for fila in lector:
+            if fila[id] == valorID:
+                # Iteramos sobre el diccionario para actualizar cada campo
+                for col, val in nuevos_valores.items():
+                    fila[col] = val
+                actualizado = True
+            registros_actualizados.append(fila)
+    if not actualizado:
+        return "No se encontro el registro con el id ingresado"
+    
+    # Si se encontro el registro, se escribe el nuevo archivo procesado con la modificacion realizada
+    with open(ruta_out, 'w', encoding='utf-8', newline='') as archivo_out:
+        escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
+        escritor.writeheader()
+        escritor.writerows(registros_actualizados)
+    return "Columnas actualizadas exitosamente"
