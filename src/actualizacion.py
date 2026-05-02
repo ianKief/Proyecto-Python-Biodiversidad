@@ -1,5 +1,6 @@
 from lectura import obtener_ruta
 import csv
+import validacion
 
 """
 Este modulo se encarga de la modificación de registros existentes dentro de un dataset
@@ -48,7 +49,37 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
                 return "La columna a actualizar no existe"
         for fila in lector:
             if fila[id] == valorID:
-                fila[columna] = valor
+                fila_mod = fila.copy()
+                fila_mod[columna] = valor
+                errores = []
+                col = columna.lower()
+                if "latitude" in col:
+                    try:
+                        if validacion.verificar_rango(fila_mod[columna],90,-90):
+                            errores.append(f"Latitud {fila_mod[columna]} fuera de rango")
+                    except ValueError:
+                        errores.append("Latitud debe ser numerica")
+                elif "longitude" in col:
+                    try:
+                        if validacion.verificar_rango(fila_mod[columna],180,-180):
+                            errores.append(f"Longitud {fila_mod[columna]} fuera de rango")
+                    except ValueError:
+                        errores.append("Longitud debe ser numerica")
+                
+                # Crea una lista con todas las columnas que contienen latitud o longitud en su nombre
+                # Toma la primera coincidencia que encuentra o devuelve None si no encuentra ninguna
+                lat = next((c for c in campos if "latitude" in c.lower()), None)
+                lon = next((c for c in campos if "longitude" in c.lower()), None)
+                if lat and lon:
+                    # Verifica que las se ingresen datos en ambas columnas
+                    tiene_lat = bool(fila_mod[lat] and fila_mod[lat].strip()) # La primera condicion es para evitar errores si el valor es None
+                    tiene_lon = bool(fila_mod[lon] and fila_mod[lon].strip())
+                    if tiene_lat != tiene_lon:
+                        errores.append("Error: Los cambios dejan una coordenada vacia y otra con valor")
+                if errores:
+                    return f"Errores encontrados: {', '.join(errores)}"
+                
+                fila = fila_mod
                 actualizado = True
             registros_actualizados.append(fila)
     if not actualizado:
@@ -89,8 +120,34 @@ def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimi
         for fila in lector:
             if fila[id] == valorID:
                 # Iteramos sobre el diccionario para actualizar cada campo
+                fila_mod = fila.copy()
                 for col, val in nuevos_valores.items():
-                    fila[col] = val
+                    fila_mod[col] = val
+                errores = []
+                for col_mod, val in nuevos_valores.items():
+                    col = col_mod.lower()
+                    if "latitude" in col:
+                        try:
+                            if validacion.verificar_rango(fila_mod[col_mod],90,-90):
+                                errores.append(f"Latitud {fila_mod[col_mod]} fuera de rango")
+                        except ValueError:
+                            errores.append("Latitud debe ser numerica")
+                    elif "longitude" in col:
+                        try:
+                            if validacion.verificar_rango(fila_mod[col_mod],180,-180):
+                                errores.append(f"Longitud {fila_mod[col_mod]} fuera de rango")
+                        except ValueError:
+                            errores.append("Longitud debe ser numerica")
+                lat = next((c for c in campos if "latitude" in c.lower()), None)
+                lon = next((c for c in campos if "longitude" in c.lower()), None)
+                if lat and lon:
+                    tiene_lat = bool(fila_mod[lat] and fila_mod[lat].strip()) # La primera condicion es para evitar errores si el valor es None
+                    tiene_lon = bool(fila_mod[lon] and fila_mod[lon].strip())
+                    if tiene_lat != tiene_lon:
+                        errores.append("Error: Los cambios dejan una coordenada vacia y otra con valor")
+                if errores:
+                    return f"Errores encontrados: {', '.join(errores)}"
+                fila = fila_mod
                 actualizado = True
             registros_actualizados.append(fila)
     if not actualizado:
