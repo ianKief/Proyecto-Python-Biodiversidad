@@ -5,6 +5,7 @@
 from pathlib import Path
 import csv
 import os
+import pycountry
 
 
 
@@ -177,5 +178,35 @@ def max_min(dataset,archivo,delimitador=","):
             if(verificar_rango(fila[longitude],maximo_longitud,minimo_longitud)):
                 if(fila not in registros_invalidos):
                     registros_invalidos.append(fila)
+
+    return registros_invalidos
+
+
+def country(dataset,archivo,delimitador=","):
+
+    """Funcion que se fija el valor del campo countryCode"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    
+    with open(rute_in,'r',encoding='utf-8') as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        registros_invalidos=[]
+        
+        print(dataset)
+        if("countryCode" not in datos.fieldnames):
+            print(f"El campo countryCode no existe en {dataset}")
+            print(" \n")
+            return None
+        else:
+            for fila in datos:
+                pais=pycountry.countries.get(alpha_2=fila["countryCode"])
+                if(fila["countryCode"]is None or fila["countryCode"].strip() == ""):
+                    registros_invalidos.append(fila)
+                    print("Campo vacio")
+                elif(pais is None):
+                    registros_invalidos.append(fila)
+                    print(f"codigo no valido ({fila['countryCode']})")
 
     return registros_invalidos
