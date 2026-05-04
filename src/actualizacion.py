@@ -1,6 +1,7 @@
 from lectura import obtener_ruta
 import csv
 import validacion
+import logger
 
 """
 Este modulo se encarga de la modificación de registros existentes dentro de un dataset
@@ -83,6 +84,7 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
                 actualizado = True
             registros_actualizados.append(fila)
     if not actualizado:
+        logger.log_error(dataset,"UPDATE")
         return "No se encontro el registro con el id ingresado"
     
     # Si se encontro el registro, se escribe el nuevo archivo procesado con la modificacion realizada
@@ -90,6 +92,7 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
         escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
         escritor.writeheader()
         escritor.writerows(registros_actualizados)
+    logger.log(dataset,"UPDATE",1)
     return "Columna actualizada exitosamente"
 
 def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimitador=","):
@@ -151,11 +154,13 @@ def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimi
                 actualizado = True
             registros_actualizados.append(fila)
     if not actualizado:
-        return "No se encontro el registro con el id ingresado"
+        logger.log_error(dataset,"UPDATE")
+        return f"No se encontro el registro con el id {id}"
     
     # Si se encontro el registro, se escribe el nuevo archivo procesado con la modificacion realizada
     with open(ruta_out, 'w', encoding='utf-8', newline='') as archivo_out:
         escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
         escritor.writeheader()
         escritor.writerows(registros_actualizados)
+    logger.log(dataset,"UPDATE",1)
     return "Columnas actualizadas exitosamente"
