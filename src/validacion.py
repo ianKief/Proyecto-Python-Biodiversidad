@@ -70,6 +70,15 @@ def coordenadas(dataset,archivo,delimitadror=","):
 
     return registros_incorrectos, cant_invalidos
 
+def no_existe_dato(dato):
+
+    """Funcion que verifica si el campo esta vacio o no"""
+
+    if(dato is None or dato.strip()==""):
+        return True
+    else:
+        return False
+
 def existe(dataset,archivo,delimitador=","):
 
     """Funcion que valida la existencia de latitud pero no longitud, y longitud pero no latitud en los registros del dataset"""
@@ -85,10 +94,15 @@ def existe(dataset,archivo,delimitador=","):
         longitude=[datos for datos in datos.fieldnames if "longitude" in datos.lower()][0]
         print(dataset)
         for fila in datos:
-            if(not (fila[latitude] is None or fila[latitude].strip() == "") and (fila[longitude] is None or fila[longitude].strip() == "")):
+
+            #Latitud existe pero longitud no
+            if(not (no_existe_dato(fila[latitude])) and (no_existe_dato(fila[longitude]))):
                 registros_incorrectos.append(fila)
-            if((fila[latitude] is None or fila[latitude].strip() == "") and not (fila[longitude] is None or fila[longitude].strip() == "")):
+
+            #Latitud no existe pero longitud si
+            elif((no_existe_dato(fila[latitude])) and not (no_existe_dato(fila[longitude]))):
                 registros_incorrectos.append(fila)
+                
         print("\n")
                 
         return registros_incorrectos
@@ -140,7 +154,7 @@ def incertidumbre(dataset,archivo,delimitador=","):
             print(f"El campo coordinateUncertaintyInMeters no existe en {dataset}")
         else:
             for fila in datos:
-                if (fila["coordinateUncertaintyInMeters"] is None or fila["coordinateUncertaintyInMeters"].strip() == ""):
+                if (no_existe_dato(fila["coordinateUncertaintyInMeters"])):
                     invalidos["no_numeros"].append(fila)
                 else:
                     valor=float(fila["coordinateUncertaintyInMeters"])
@@ -210,3 +224,30 @@ def country(dataset,archivo,delimitador=","):
                     print(f"codigo no valido ({fila['countryCode']})")
 
     return registros_invalidos
+
+
+def coordenada_completa(dataset,archivo,dato,maximo,minimo,delimitador=","):
+
+    """Funcion que recibe que coordenada se quiere verificar (latitud o longitud) y el rango del mismo (delimitado por maximo y minimo)"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    
+    with open (rute_in,'r',encoding='utf-8') as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        campo=[datos for datos in datos.fieldnames if dato in datos.lower()][0]
+        maximo_seteado=maximo-20
+        minimo_seteado=minimo+20
+        registros=[]
+
+        for fila in datos:
+
+            #Verifico si existe el dato, si esta dentro de su rango original y si esta dentro del rango que yo estableci
+            if not(verificar_rango(fila[campo],maximo,minimo)):
+                if not(verificar_rango(fila[campo],maximo_seteado,minimo_seteado)):
+                    continue
+            
+            registros.append(fila)
+
+    return registros
