@@ -42,3 +42,11 @@ streamlit run app.py
 ```
 
 Se abrira un host local en el navegador con la pagina desarrollada en el proyecto.
+
+### 4.3 Pycountry
+
+```bash
+pip install pycountry
+```
+
+Esto se necesita para que funcione el modulo de Validacion
