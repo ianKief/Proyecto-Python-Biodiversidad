@@ -134,53 +134,62 @@ def sanitizar(dataset,archivo,delimitador=","):
     if not ruta_in:
         return "No se encontro el archivo ingresado"
 
-    invalidos = set()
+    invalidos = {}
 
     with open(ruta_in,"r",encoding="utf-8") as archivo_in:
         lector = csv.DictReader(archivo_in,delimiter=delimitador)
         campos = lector.fieldnames
         campo_id = campos[0] # Se asume que el primer campo es el ID
 
-    # Defino una funcion auxiliar para agregar los IDs de los registros invalidos a un set, evitando asi duplicados
-    def agregar_invalido(filas_inv):
+    # Defino una funcion auxiliar para agregar los IDs de los registros invalidos a un diccionario, junto con el motivo de la invalidacion
+    def agregar_invalido(filas_inv, motivo):
         if filas_inv:
             for fila in filas_inv:
-                invalidos.add(fila[campo_id])
-        
+                id = fila[campo_id]
+                if id not in invalidos:
+                    invalidos[id] = []
+                if motivo not in invalidos[id]:
+                    invalidos[id].append(motivo)
+
     """Aqui se realizan todas las validaciones utilizando el modulo de validacion"""
     # 1. Validacion de ids duplicados
     duplicados = validacion.duplicados(dataset,archivo,delimitador)
     if duplicados:
-        invalidos.update(duplicados)
+        for id in duplicados:
+            if id not in invalidos:
+                invalidos[id] = []
+            if "ID duplicado" not in invalidos[id]:
+                invalidos[id].append("ID duplicado")
         
     # 2. Validacion de coordenadas
     coordenadas_invalidas = validacion.coordenadas(dataset,archivo,delimitador)
     if coordenadas_invalidas and coordenadas_invalidas[0]:
-        agregar_invalido(coordenadas_invalidas[0])
+        agregar_invalido(coordenadas_invalidas[0], "Coordenadas fuera de rango")
         
     # 3. Validacion de inconsistencias
     inconsistentes = validacion.existe(dataset,archivo,delimitador)
     if inconsistentes:
-        agregar_invalido(inconsistentes)
+        agregar_invalido(inconsistentes, "Inconsistencia encontrada (falta latitud o longitud)")
 
     # 4. Validacion de maximos y minimos
     fuera_rango = validacion.max_min(dataset,archivo,delimitador)
     if fuera_rango:
-        agregar_invalido(fuera_rango)
+        agregar_invalido(fuera_rango, "Valor fuera de rango")
 
     # 5. Validacion de incertidumbre
     incertidumbre = validacion.incertidumbre(dataset,archivo,delimitador)
     if incertidumbre:
-        agregar_invalido(incertidumbre.get("no_numeros", []))
-        agregar_invalido(incertidumbre.get("negativos", []))
-        agregar_invalido(incertidumbre.get("muy_alto", []))
+        agregar_invalido(incertidumbre.get("no_numeros", []), "No es un número")
+        agregar_invalido(incertidumbre.get("negativos", []), "Valor negativo")
+        agregar_invalido(incertidumbre.get("muy_alto", []), "Valor muy alto")
         
     # 6. Validacion de codigo de pais
     paises = validacion.country(dataset,archivo,delimitador)
     if paises:
-        agregar_invalido(paises)
+        agregar_invalido(paises, "Código de país inválido")
 
-    registros_invalidos = 0 
+    registros_invalidos = 0
+    registros_totales = 0
     with open(ruta_in,"r",encoding="utf-8") as archivo_in \
         , open(ruta_out,"w",encoding="utf-8") as archivo_out:
         lector = csv.DictReader(archivo_in,delimiter=delimitador)
@@ -188,6 +197,7 @@ def sanitizar(dataset,archivo,delimitador=","):
         escritor.writeheader()
         for fila in lector:
             id = fila[campo_id]
+            registros_totales += 1
             # Verifico que el ID del registro no este en el set de invalidos, si lo esta se omite su escritura y se cuenta como registro eliminado
             if id in invalidos:
                 registros_invalidos += 1
@@ -196,6 +206,10 @@ def sanitizar(dataset,archivo,delimitador=","):
     
     if registros_invalidos == 0:
         return "No se encontraron registros conflictivos"
+    elif registros_totales == 0:
+        return "El dataset no contiene registros"
     else:
+        porcentaje = ((registros_invalidos / registros_totales) * 100)
         logger.log(dataset,"DELETE",registros_invalidos)
-        return f"Se eliminaron {registros_invalidos} registros conflictivos"
+        return f"Se eliminaron {registros_invalidos} registros conflictivos de un total de {registros_totales},lo que representa un {porcentaje:.2f}% del dataset"
+        
