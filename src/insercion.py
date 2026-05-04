@@ -119,7 +119,7 @@ def preparar_registro_para_csv(dataset, archivo, registro, estructura_4A, delimi
     Genera el ID automáticamente.
     """
     fila = []
-    nuevo_id = nuevo_id = generar_id(dataset, archivo, delimitador)
+    nuevo_id = generar_id(dataset, archivo, delimitador)
     fila.append(nuevo_id)
 
     for col in estructura_4A:
@@ -158,7 +158,7 @@ def insertar_registro(dataset, archivo, delimitador=","):
         return False
 
     # 5. preparar fila (4.D)
-    nueva_fila = preparar_registro_para_csv(registro, estructura)
+    nueva_fila = preparar_registro_para_csv(dataset, archivo, registro, estructura, delimitador)
 
     # 6. leer dataset original
     if ruta_out.exists():
@@ -168,14 +168,12 @@ def insertar_registro(dataset, archivo, delimitador=","):
         with open(ruta_in, encoding="utf-8") as f:
             lector = list(csv.reader(f, delimiter=delimitador))
 
-    arch = lector
-
     # 7. escribir nuevo archivo
     ruta_out.parent.mkdir(parents=True, exist_ok=True)
 
     with open(ruta_out, "w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, delimiter=delimitador)
-        writer.writerows(arch)
+        writer.writerows(lector)
         writer.writerow(nueva_fila)
 
     print(f"\n✔ Registro insertado en: {ruta_out}")
@@ -207,8 +205,6 @@ def insertar_multiples_registros(dataset, archivo, delimitador=","):
         with open(ruta_in, encoding="utf-8") as f:
             lector = list(csv.reader(f, delimiter=delimitador))
 
-    arch = lector[:]
-
     # 4. lista de nuevos registros válidos
     nuevos_registros = []
 
@@ -231,7 +227,7 @@ def insertar_multiples_registros(dataset, archivo, delimitador=","):
         es_valido, errores = validar_registro(registro)
 
         if es_valido:
-            nueva_fila = preparar_registro_para_csv(registro, estructura)
+            nueva_fila = preparar_registro_para_csv(dataset, archivo, registro, estructura, delimitador)
             nuevos_registros.append(nueva_fila)
 
             print("✔ Registro válido agregado a la operación.")
@@ -255,7 +251,7 @@ def insertar_multiples_registros(dataset, archivo, delimitador=","):
         writer = csv.writer(f, delimiter=delimitador)
 
         # datos previos
-        writer.writerows(arch)
+        writer.writerows(lector)
 
         # nuevos registros
         writer.writerows(nuevos_registros)
