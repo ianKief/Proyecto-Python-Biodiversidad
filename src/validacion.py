@@ -57,7 +57,7 @@ def coordenadas(dataset,archivo,delimitadror=","):
 
         print(dataset)
         for fila in datos:
-            if(verificar_rango(fila[latitude],maximo_latitud,minimo_latitud))):
+            if(verificar_rango(fila[latitude],maximo_latitud,minimo_latitud)):
                 cant_invalidos+=1
                 registros_incorrectos.append(fila)
             if(verificar_rango(fila[longitude],maximo_longitud,minimo_longitud)):
