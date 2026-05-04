@@ -1,10 +1,9 @@
 from lectura import listar_columnas, obtener_ruta
 from validacion import verificar_rango
-import uuid
 import csv
 
 
-def crear_estructura_registro(dataset, archivo, delimitador="\t"):
+def crear_estructura_registro(dataset, archivo, delimitador=","):
     
     """ Retorna la lista de columnas del dataset excluyendo el ID. """
     
@@ -83,13 +82,44 @@ def validar_registro(registro):
 
     return len(errores) == 0, errores
 
-def preparar_registro_para_csv(registro, estructura_4A):
+def generar_id(dataset, archivo, delimitador):
+    """
+    Deduce cómo se construyen los IDs del dataset y genera el siguiente.
+    Busca el ID máximo existente y le suma 1.
+    Para Xeno-canto agrega el sufijo @XC.
+    """
+    ruta_in, ruta_out = obtener_ruta(dataset, archivo)
+    ruta = ruta_out if ruta_out.exists() else ruta_in
+
+    max_id = 0
+    ultimo_id = ""
+
+    with open(ruta, encoding="utf-8") as f:
+        lector = csv.reader(f, delimiter=delimitador)
+        next(lector)
+        for fila in lector:
+            if not fila:
+                continue
+            ultimo_id = fila[0].strip()
+            try:
+                numero = int(ultimo_id.replace("@XC", ""))
+                if numero > max_id:
+                    max_id = numero
+            except ValueError:
+                continue
+
+    nuevo_numero = max_id + 1
+    if "@XC" in ultimo_id:
+        return f"{nuevo_numero}@XC"
+    return str(nuevo_numero)
+
+def preparar_registro_para_csv(dataset, archivo, registro, estructura_4A, delimitador=","):
     """
     Convierte el registro en una lista lista para escribir en el CSV.
     Genera el ID automáticamente.
     """
     fila = []
-    nuevo_id = str(uuid.uuid4())
+    nuevo_id = nuevo_id = generar_id(dataset, archivo, delimitador)
     fila.append(nuevo_id)
 
     for col in estructura_4A:
@@ -98,7 +128,7 @@ def preparar_registro_para_csv(registro, estructura_4A):
 
     return fila
 
-def insertar_registro(dataset, archivo, delimitador="\t"):
+def insertar_registro(dataset, archivo, delimitador=","):
     """
     Lee el dataset, pide un registro por teclado, lo valida e inserta en processed_datasets/.
     """
@@ -151,7 +181,7 @@ def insertar_registro(dataset, archivo, delimitador="\t"):
     print(f"\n✔ Registro insertado en: {ruta_out}")
     return True
 
-def insertar_multiples_registros(dataset, archivo, delimitador="\t"):
+def insertar_multiples_registros(dataset, archivo, delimitador=","):
     """
     Ejercicio 4.G
     Extiende 4.F permitiendo ingresar múltiples registros
