@@ -1,6 +1,7 @@
 import csv
 import logger
 from lectura import obtener_ruta
+import validacion
 
 def identificador(dataset,archivo,valorID,delimitador=","):
 
@@ -123,3 +124,78 @@ def condicion(dataset,archivo,columnas,valor,condicion,delimitador=","):
 
     return "Se eliminaron los registros que cumplian la condicion"
 
+def sanitizar(dataset,archivo,delimitador=","):
+    """
+    Funcion que utiliza las validaciones del modulo de validacion para eliminar datos conflictivos.
+    Elimina los registros correspondientes y genera un nuevo archivo en processed_datasets.
+    """
+
+    ruta_in,ruta_out=obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return "No se encontro el archivo ingresado"
+
+    invalidos = set()
+
+    with open(ruta_in,"r",encoding="utf-8") as archivo_in:
+        lector = csv.DictReader(archivo_in,delimiter=delimitador)
+        campos = lector.fieldnames
+        campo_id = campos[0] # Se asume que el primer campo es el ID
+
+    # Defino una funcion auxiliar para agregar los IDs de los registros invalidos a un set, evitando asi duplicados
+    def agregar_invalido(filas_inv):
+        if filas_inv:
+            for fila in filas_inv:
+                invalidos.add(fila[campo_id])
+        
+    """Aqui se realizan todas las validaciones utilizando el modulo de validacion"""
+    # 1. Validacion de ids duplicados
+    duplicados = validacion.duplicados(dataset,archivo,delimitador)
+    if duplicados:
+        invalidos.update(duplicados)
+        
+    # 2. Validacion de coordenadas
+    coordenadas_invalidas = validacion.coordenadas(dataset,archivo,delimitador)
+    if coordenadas_invalidas and coordenadas_invalidas[0]:
+        agregar_invalido(coordenadas_invalidas[0])
+        
+    # 3. Validacion de inconsistencias
+    inconsistentes = validacion.existe(dataset,archivo,delimitador)
+    if inconsistentes:
+        agregar_invalido(inconsistentes)
+
+    # 4. Validacion de maximos y minimos
+    fuera_rango = validacion.max_min(dataset,archivo,delimitador)
+    if fuera_rango:
+        agregar_invalido(fuera_rango)
+
+    # 5. Validacion de incertidumbre
+    incertidumbre = validacion.incertidumbre(dataset,archivo,delimitador)
+    if incertidumbre:
+        agregar_invalido(incertidumbre.get("no_numeros", []))
+        agregar_invalido(incertidumbre.get("negativos", []))
+        agregar_invalido(incertidumbre.get("muy_alto", []))
+        
+    # 6. Validacion de codigo de pais
+    paises = validacion.country(dataset,archivo,delimitador)
+    if paises:
+        agregar_invalido(paises)
+
+    registros_invalidos = 0 
+    with open(ruta_in,"r",encoding="utf-8") as archivo_in \
+        , open(ruta_out,"w",encoding="utf-8") as archivo_out:
+        lector = csv.DictReader(archivo_in,delimiter=delimitador)
+        escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=delimitador)
+        escritor.writeheader()
+        for fila in lector:
+            id = fila[campo_id]
+            # Verifico que el ID del registro no este en el set de invalidos, si lo esta se omite su escritura y se cuenta como registro eliminado
+            if id in invalidos:
+                registros_invalidos += 1
+                continue
+            escritor.writerow(fila)
+    
+    if registros_invalidos == 0:
+        return "No se encontraron registros conflictivos"
+    else:
+        logger.log(dataset,"DELETE",registros_invalidos)
+        return f"Se eliminaron {registros_invalidos} registros conflictivos"
