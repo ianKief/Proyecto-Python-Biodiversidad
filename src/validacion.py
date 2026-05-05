@@ -407,6 +407,45 @@ def country(dataset,archivo,delimitador=","):
 
     return registros_invalidos
 
+def informacion_taxonomica(dataset,archivo,delimitador=","):
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    #La informacion necesaria: familia, reino, genero, filo, especie, dominio, orden, clase
+    taxonomia=["family","kingdom","genus","phylum","scientificName","higherClassification","order","class"]
+    
+    with open(rute_in,encoding="utf8") as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+        registros_invalidos=[]
+        for campo in taxonomia:
+            if(campo not in datos.fieldnames):
+                continue
+
+            for fila in datos:
+                if no_existe_dato(fila[campo]):
+                    if not (fila in registros_invalidos):
+                        registros_invalidos.append(fila)
+
+    return registros_invalidos
+
+
+
+def resumen(dataset,archivo,delimitador=","):
+
+    cant=cant_registros(dataset,archivo,delimitador)
+    dupli=duplicados(dataset,archivo,delimitador)
+    taxonomica=informacion_taxonomica(dataset,archivo,delimitador)
+    coord_invalidas=coordenadas(dataset,archivo,delimitador)
+    fecha=fechas(dataset,archivo,delimitador)
+
+    resumen_calidad={"cantidad":cant,
+                     "duplicados":dupli,
+                     "taxonomia":taxonomica,
+                     "coordenadas":coord_invalidas,
+                     "fechas":fecha}
+    
+    return resumen_calidad
+
 
 def coordenada_completa(dataset,archivo,dato,maximo,minimo,delimitador=","):
 
