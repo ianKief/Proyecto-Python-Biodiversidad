@@ -6,7 +6,9 @@ from pathlib import Path
 import csv
 import os
 import pycountry
-
+import re
+from dateutil import parser
+from datetime import datetime
 
 
 def ruta(dataset,archivo):
@@ -135,6 +137,186 @@ def duplicados(dataset,archivo,delimitador=","):
 
 
     return reg_duplicados
+
+def parece_fecha(texto):
+
+    """Funcion que se fija si el dato pasado es una fecha"""
+
+    patrones = [
+        r"\d{4}-\d{2}-\d{2}",          # 2020-04-17
+        r"\d{2}/\d{2}/\d{4}",          # 31/03/2018
+        r"\d{4}/\d{2}/\d{2}",          # 2018/03/31
+        r"\d{2}:\d{2}:\d{2}",          # 08:09:00
+        r"T\d{2}:\d{2}:\d{2}",         # ISO
+    ]
+    return any(re.search(p, texto) for p in patrones)
+
+def corregir_12h(match):
+
+    """Funcion que pasa de 16 PM (invalido) a 04 PM (valido)"""
+
+    hora = int(match.group(1))
+    minutos = match.group(2)
+    segundos = match.group(3)
+    ampm = match.group(4).upper()
+
+    if(hora>12):
+        hora-=12
+
+    if minutos and segundos:
+        return f"{hora:02}:{minutos}:{segundos} {ampm}"
+    elif minutos:
+        return f"{hora:02}:{minutos} {ampm}"
+    else:
+        return f"{hora:02} {ampm}"
+    
+def puntos(match):
+
+    """Funcion que reemplaza los "." en una hora por ":" """
+
+    h = match.group(1)
+    m = match.group(2)
+    s = match.group(3)
+
+    if s:
+        return f"{h}:{m}:{s}"
+    return f"{h}:{m}"
+
+
+def limpiar(fecha,estandares):
+
+    """Funcion que limpia el dato para asi ver si se puede interpretar como una fecha"""
+
+    if(len(fecha)>30):
+        return None
+    else:
+        for valor in estandares.keys():
+            if(valor in fecha):
+                #Reemplaza las zonas horarias (ARST,PST,WET,etc) por su valor
+                fecha = fecha.replace(valor, estandares[valor])
+
+        #Elimina caracteres invicibles (LRM o RLM)
+        fecha = re.sub(r"[\u200e\u200f\u202a-\u202e]", "", fecha)
+
+        #Borra los parentesis
+        fecha=re.sub(r"\(.*?\)", "",fecha)
+
+        #Elimina el exceso de espacios 
+        fecha=re.sub(r"\s+", " ", fecha).strip()
+
+        #Normaliza PM o AM mal escritos, ej: p.m, p m
+        fecha=re.sub(r"\b(p\.?\s*m\.?)\b", "PM", fecha, flags=re.IGNORECASE)
+        fecha=re.sub(r"\b(a\.?\s*m\.?)\b", "AM", fecha, flags=re.IGNORECASE)
+
+        #Agrega un espacio entre PM/AM y el tiempo, ej: 05:03PM lo pasa a 05:03 PM 
+        fecha = re.sub(r"(\d{2})(AM|PM)\b", r"\1 \2", fecha, flags=re.IGNORECASE)
+
+        #Elimina la abreviacion hs de la hora
+        fecha = re.sub(r"\bhs\b", "", fecha, flags=re.IGNORECASE)
+
+        #reemplaza los divisiones del tiempo invalidas (".",";","_"), ej: 05.06.03, 05;06;03, 05_06_03 lo pasa a 05:06:03
+        fecha = re.sub(r"\b(\d{1,2})\.(\d{2})(?:\.(\d{2}))?\b",puntos,fecha)
+        fecha = re.sub(r"\b(\d{1,2})\;(\d{2})(?:\;(\d{2}))?\b",puntos,fecha)
+        fecha = re.sub(r"\b(\d{1,2})\_(\d{2})(?:\_(\d{2}))?\b",puntos,fecha)
+
+        #Limpia los espacios en el tiempo, ej: 11:  08
+        fecha=re.sub(r"(\d{1,2})\s*:\s*(\d{2})", r"\1:\2", fecha)
+
+        #Elimina ":" adelante de la hora, ej: :05:03 lo pasa a 05:03
+        fecha = re.sub(r"\s:(\d{1,2}:\d{2})", r" \1", fecha)
+
+        #Elimina letras antes del UTC o el valor de la zona, ej: DE -0300
+        fecha = re.sub(r"\b[A-Za-z]+(?=[+-]\d{4}\b)", "", fecha)
+        fecha = re.sub(r"\b[A-Za-z]+\b(?=\s+UTC\b)", "", fecha)
+
+        #Pasa el tiempo a un formato AM/PM valido, ej: 17 PM lo pasa a 05 PM
+        fecha = re.sub(r"\b(1[3-9]|2[0-3])(?::([0-5]\d))?(?::([0-5]\d))?\s*(AM|PM)\b",corregir_12h,fecha,flags=re.IGNORECASE)
+
+        #Reemplaza la cadena de 0 por una con signo positivo
+        if re.search(r"\b0000$", fecha):
+            fecha = fecha[:-4] + "+0000"
+
+        return fecha
+
+    
+def fechas(dataset,archivo,delimitador=","):
+
+    """Funcion que revisa el formato de las fechas del dataset"""
+
+    rute_in=ruta(dataset,archivo)
+    if not rute_in:
+        return None
+    
+    registros=[]
+    with open(rute_in,'r',encoding="utf-8") as archivo:
+        datos=csv.DictReader(archivo,delimiter=delimitador)
+
+        #Zonas horarias que aparecen y no las interpreta el parser
+        tzinfos = {
+                "HST": "-1000",
+                "SST": "-1100",  
+                "ART": "-0300",
+                "ARST": "-0200",
+                "PST": "-0800",
+                "PDT": "-0700",
+                "CET": "+0100",
+                "CEST": "+0200",
+                "EST": "-0500",
+                "EDT": "-0400",
+                "WET": "0000",
+                "WEST": "+0100",
+                "SAST": "+0200",
+                "ACDT": "+1030",
+                "ACST": "+0930",
+                "CDT": "-0500",
+                "CST": "-0600",
+                "BST": "+0100",
+                "MST": "-0700",
+                "MDT": "-0600",
+                "AEST": "+1000",
+                "AEDT": "+1100",
+                "NZDT": "+1300",
+                "NZST": "+1200",
+                "BRT": "-0300",
+                "EET": "+0200",
+                "EEST": "+0300",
+                "BRT": "-0300",
+                "BRST": "-0200",
+                "MSK": "+0300",
+                "IST":"+0530",
+                "NST":"-0330",
+                "NDT":"-0230",
+                "AKST":"-0900",
+                "CMT":"-0500",
+                "AWST":"+0800",
+                "AST":"-0400",
+                "COT":"-0500",
+                "IDT":"+0300"
+                }
+
+        print(dataset)
+        fecha_actual=datetime.now().year
+        for fila in datos:
+            for campos in fila:
+                if not (parece_fecha(fila[campos])):
+                    continue
+                else:
+                    fecha=limpiar(fila[campos],tzinfos)
+                    if(fecha==None):
+                        continue
+                    else:
+                        try:
+                            fecha=parser.parse(fecha)
+                        except:
+                            registros.append(fila)
+                            continue
+
+                    if (fecha.year > fecha_actual):
+                        if(fila not in registros):
+                            registros.append(fila)
+
+
+    return registros
 
 def incertidumbre(dataset,archivo,delimitador=","):
 
