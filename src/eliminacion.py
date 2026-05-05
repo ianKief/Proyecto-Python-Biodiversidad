@@ -188,6 +188,11 @@ def sanitizar(dataset,archivo,delimitador=","):
     if paises:
         agregar_invalido(paises, "Código de país inválido")
 
+    # 7. Validacion de fechas
+    fecha=validacion.fechas(dataset,archivo,delimitador)
+    if fecha:
+        agregar_invalido(fecha, "Fecha invalida")
+
     registros_invalidos = 0
     registros_totales = 0
     with open(ruta_in,"r",encoding="utf-8") as archivo_in \
