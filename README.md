@@ -47,6 +47,8 @@ Se abrira un host local en el navegador con la pagina desarrollada en el proyect
 
 ```bash
 pip install pycountry
+
+pip install python-dateutil
 ```
 
 Esto se necesita para que funcione el modulo de Validacion
