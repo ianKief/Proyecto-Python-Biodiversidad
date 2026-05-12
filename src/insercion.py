@@ -27,6 +27,9 @@ def validar_registro(registro):
 
     columnas = registro.keys()
 
+    paises_sudamerica = {"AR", "BO", "BR", "CL", "CO", "EC", "GY", "PY", "PE", "SR", "UY", "VE"}
+    country = registro.get("countryCode", "") or ""
+
     latitud = [col for col in columnas if "latitude" in col.lower()]
     longitud = [col for col in columnas if "longitude" in col.lower()]
 
@@ -39,46 +42,34 @@ def validar_registro(registro):
     # Reutiliza verificar_rango
     if campo_lat and verificar_rango(valor_lat, 90, -90):
         errores.append("Latitud inválida")
-
     if campo_lon and verificar_rango(valor_lon, 180, -180):
         errores.append("Longitud inválida")
 
     # Reutiliza lógica existe
     if valor_lat.strip() != "" and valor_lon.strip() == "":
         errores.append("Existe latitud pero falta longitud")
-
     if valor_lon.strip() != "" and valor_lat.strip() == "":
         errores.append("Existe longitud pero falta latitud")
 
-    # Reutiliza lógica max_min
-    if campo_lat and verificar_rango(valor_lat, 70, -70):
-        errores.append("Latitud fuera del rango de Sudamérica")
-
-    if campo_lon and verificar_rango(valor_lon, 160, -160):
-        errores.append("Longitud fuera del rango de Sudamérica")
+    # Reutiliza lógica max_min para Sudamérica
+    if country in paises_sudamerica:
+        if campo_lat and verificar_rango(valor_lat, 70, -70):
+            errores.append("Latitud fuera del rango de Sudamérica")
+        if campo_lon and verificar_rango(valor_lon, 160, -160):
+            errores.append("Longitud fuera del rango de Sudamérica")
 
     # Reutiliza logica incertidumbre
     if "coordinateUncertaintyInMeters" in registro:
         incertidumbre = registro["coordinateUncertaintyInMeters"]
-
         if incertidumbre is not None and incertidumbre.strip() != "":
             try:
                 valor = float(incertidumbre)
-
                 if valor < 0:
-                    errores.append(
-                        "coordinateUncertaintyInMeters negativo"
-                    )
-
+                    errores.append("coordinateUncertaintyInMeters negativo")
                 elif valor > 1000:
-                    errores.append(
-                        "coordinateUncertaintyInMeters muy alto"
-                    )
-
+                    errores.append("coordinateUncertaintyInMeters muy alto")
             except ValueError:
-                errores.append(
-                    "coordinateUncertaintyInMeters no numérico"
-                )
+                errores.append("coordinateUncertaintyInMeters no numérico")
 
     return len(errores) == 0, errores
 
@@ -107,20 +98,15 @@ def generar_id(dataset, archivo, delimitador):
                     max_id = numero
             except ValueError:
                 continue
+    return ultimo_id, max_id + 1
 
-    nuevo_numero = max_id + 1
-    if "@XC" in ultimo_id:
-        return f"{nuevo_numero}@XC"
-    return str(nuevo_numero)
-
-def preparar_registro_para_csv(dataset, archivo, registro, estructura_4A, delimitador=","):
+def preparar_registro_para_csv(registro, estructura_4A, id, delimitador=","):
     """
     Convierte el registro en una lista lista para escribir en el CSV.
     Genera el ID automáticamente.
     """
     fila = []
-    nuevo_id = generar_id(dataset, archivo, delimitador)
-    fila.append(nuevo_id)
+    fila.append(id)
 
     for col in estructura_4A:
         valor = registro.get(col)
@@ -158,7 +144,10 @@ def insertar_registro(dataset, archivo, delimitador=","):
         return False
 
     # 5. preparar fila (4.D)
-    nueva_fila = preparar_registro_para_csv(dataset, archivo, registro, estructura, delimitador)
+    id_formato, id_nuevo = generar_id(dataset, archivo, delimitador)
+    if "@XC" in id_formato:
+        id_nuevo = str(f"{id_nuevo}@XC")
+    nueva_fila = preparar_registro_para_csv(registro, estructura, id_nuevo, delimitador)
 
     # 6. leer dataset original
     if ruta_out.exists():
@@ -227,9 +216,11 @@ def insertar_multiples_registros(dataset, archivo, delimitador=","):
         es_valido, errores = validar_registro(registro)
 
         if es_valido:
-            nueva_fila = preparar_registro_para_csv(dataset, archivo, registro, estructura, delimitador)
-            nuevos_registros.append(nueva_fila)
-
+            id_formato, id_nuevo = generar_id(dataset, archivo, delimitador) 
+            id_nuevo += int(len(nuevos_registros))
+            if "@XC" in id_formato:
+                id_nuevo= str(f"{id_nuevo}@XC")
+            nuevos_registros.append(preparar_registro_para_csv(registro, estructura, id_nuevo, delimitador))
             print("✔ Registro válido agregado a la operación.")
         else:
             print("\n⚠ Registro inválido. NO fue agregado:")
