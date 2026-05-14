@@ -1,4 +1,6 @@
 import streamlit as st
+import src.lectura as lec
+import datetime
 
 st.set_page_config(
     page_title="Inicio",
@@ -51,3 +53,23 @@ st.markdown("""
 2. **Consultas:** A través de esta plataforma, tendrás acceso a una amplia base de datos de biodiversidad, 
             donde podrás realizar consultas específicas sobre especies, regiones y amenazas.
 """)
+
+# Selección del dataset. Se usa session_state para que la elección se mantenga persistente entre paginas
+if 'dataset' not in st.session_state:
+    st.session_state['dataset'] = None
+if 'fecha_hora' not in st.session_state:
+    st.session_state['fecha_hora'] = None
+
+def actualizar_seleccion():
+    st.session_state['dataset'] = st.session_state['dataset_seleccionado']
+    st.session_state['fecha_hora'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+opciones = ["Iadiza", "Inaturalist", "Xeno-canto"]
+st.sidebar.selectbox("Selecciona un dataset", 
+                     opciones, 
+                     key='dataset_seleccionado', 
+                     on_change=actualizar_seleccion)
+
+st.sidebar.info(f"Dataset seleccionado: **{st.session_state['dataset']}**")
+st.sidebar.info(f"Cantidad de registros: **{lec.cant_registros(st.session_state['dataset'], 'dataset.csv')}**")
+st.sidebar.info(f"Fecha y Hora de selección: **{st.session_state['fecha_hora']}**")
