@@ -24,6 +24,20 @@ def obtener_ruta(nombre_dataset, nombre_archivo):
         return None, None
     return ruta_in, ruta_out
 
+def obtener_dataset(nombre_dataset, delimitador=",", usecols=None):
+
+    """
+    Obtiene la ruta del dataset procesado y lo retorna como dataframe
+    """
+
+    raiz = Path(__file__).parent.parent
+    ruta = Path(os.path.join(raiz, 'processed_datasets', f"{nombre_dataset}_procesado.csv"))
+
+    if not ruta.exists():
+        msj_error_archivo(f"{nombre_dataset}_procesado.csv")
+        return None
+    return pd.read_csv(ruta, sep=delimitador)
+
 def listar_columnas(dataset,archivo,delimitador=","):
     
     """Retorna una lista con los nombres de cada columna del dataset"""
