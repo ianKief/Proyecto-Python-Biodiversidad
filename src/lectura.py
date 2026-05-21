@@ -71,11 +71,11 @@ def cant_registros(dataset,archivo,delimitador=","):
 
     """Retorna la cantidad de registros del dataset"""
 
-    ruta_in, _ = obtener_ruta(dataset,archivo)
-    if not ruta_in:
+    _, ruta = obtener_ruta(dataset,archivo)
+    if not ruta:
         return 0
     
-    return len(pd.read_csv(ruta_in, sep=delimitador, usecols=[0])) # usecols=[0] para leer solo la primera columna
+    return len(pd.read_csv(ruta, sep=delimitador, usecols=[0])) # usecols=[0] para leer solo la primera columna
 
 def analisis_nulos(dataset, archivo, delimitador=","):
     """
