@@ -37,13 +37,23 @@ if datos:
     nombres = [d["Nombre"] for d in datos]
     seleccionado = st.selectbox("Seleccioná un dataset para ver su detalle", nombres)
 
-    sep = detectar_separador(directorio / seleccionado)
-    df = pd.read_csv(directorio / seleccionado, sep=sep, encoding="utf-8")
+    try:
+        sep = detectar_separador(directorio / seleccionado)
+        df = pd.read_csv(directorio / seleccionado, sep=sep, encoding="utf-8", on_bad_lines="skip")
 
-    col1 = st.columns(1)
-    st.metric("Total de registros", len(df))
+        st.metric("Total de registros", len(df))
     
-    st.write("Porcentaje de valores nulos por columna:")
-    nulos = (df.isna().sum() / len(df) * 100).round(2).reset_index()
-    nulos.columns = ["Columna", "% nulos"]
-    st.dataframe(nulos, use_container_width=True, hide_index=True)
+        st.write("Porcentaje de valores nulos por columna:")
+        if len(df) > 0:
+            nulos = (df.isna().sum() / len(df) * 100).round(2).reset_index()
+            nulos.columns = ["Columna", "% nulos"]
+        else:
+            nulos = pd.DataFrame({
+                "Columna": df.columns,
+                "% nulos": 0
+            })
+            
+        st.dataframe(nulos, use_container_width=True, hide_index=True)
+
+    except pd.errors.EmptyDataError:
+        st.error("El dataset está vacío.")
