@@ -16,12 +16,13 @@ def obtener_ruta(nombre_dataset, nombre_archivo):
     """Obtiene la ruta de entrada del dataset original y la ruta de salida del dataset procesado"""
 
     raiz = Path(__file__).parent.parent
-    ruta_in = Path(os.path.join(raiz, 'raw_datasets', nombre_dataset, nombre_archivo))
-    ruta_out = Path(os.path.join(raiz, 'processed_datasets', f"{nombre_dataset}_procesado.csv"))
-
-    if not ruta_in.exists():
-        msj_error_archivo(nombre_archivo)
-        return None, None
+    # Si me piden el procesado, la ruta de entrada es la carpeta de procesados
+    if "procesado" in nombre_archivo:
+        ruta_in = Path(os.path.join(raiz, 'processed_datasets', nombre_archivo))
+        ruta_out = ruta_in 
+    else:
+        ruta_in = Path(os.path.join(raiz, 'raw_datasets', nombre_dataset, nombre_archivo))
+        ruta_out = Path(os.path.join(raiz, 'processed_datasets', f"{nombre_dataset}_procesado.csv"))
     return ruta_in, ruta_out
 
 def obtener_dataset(nombre_dataset, delimitador=",", usecols=None):
