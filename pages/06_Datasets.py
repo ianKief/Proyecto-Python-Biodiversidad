@@ -2,17 +2,13 @@ import streamlit as st
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+from src.dataset_utils import *
 
 st.set_page_config(
     page_title="Datasets",
     page_icon="📂"
 )
 st.title("Datasets disponibles")
-
-def detectar_separador(ruta):
-    with open(ruta, encoding="utf-8") as f:
-        primer_linea = f.readline()
-        return "\t" if "\t" in primer_linea else ","
 
 directorio = Path(__file__).parent.parent / "processed_datasets"
 
@@ -52,8 +48,33 @@ if datos:
                 "Columna": df.columns,
                 "% nulos": 0
             })
-            
+
         st.dataframe(nulos, use_container_width=True, hide_index=True)
 
     except pd.errors.EmptyDataError:
         st.error("El dataset está vacío.")
+
+
+st.divider()
+st.subheader("Tabla comparativa de datasets")
+
+comparativa = []
+for archivo in directorio.glob("*.csv"):
+    
+    sep = detectar_separador(archivo) # funcion en src/dataset_utils.py
+    df_comp = pd.read_csv(archivo, sep=sep, encoding="utf-8", on_bad_lines='skip')
+
+    pct_coords = cordenadas_validas(df_comp)
+    pct_fechas = fechas_validas(df_comp)
+    pct_completitud = completitud_promedio(df_comp) 
+    
+    comparativa.append({
+        "Dataset": archivo.name,
+        "Registros": len(df_comp),
+        "% Coordenadas válidas": pct_coords,
+        "% Fechas válidas": pct_fechas,
+        "% Completitud promedio": pct_completitud,
+    })
+    
+if comparativa:
+    st.dataframe(comparativa, use_container_width=True, hide_index=True)
