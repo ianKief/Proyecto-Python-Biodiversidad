@@ -194,3 +194,54 @@ def valores_max_min(dataset,archivo,columna,tipo,delimitador=','):
     
     else:
         return f"Tipo '{tipo}' no es válido. Por favor ingrese 'numeric', 'text' o 'coordinate'."
+    
+def buscar_registros(df, filtros_exactos=None, filtros_libres=None):
+    """
+    Aplica filtros de busqueda a un dataframe y retorna los registros que coincidan
+    
+    - df: DataFrame cargado previamente
+    - filtros_exactos: diccionario donde la clave es el nombre de la columna (o un texto) 
+                                    y el valor es una lista de valores a buscar exactamente en esa columna (o una fecha inicial y una fecha final)
+    - filtros_libres: tupla con la columna y el valor a buscar libremente
+
+    Retorna un DataFrame con los registros que coincidan con los filtros aplicados
+    """
+
+    df_filtrado = df.copy()
+
+    # Aplicar filtros libres
+    if filtros_libres:
+        col, texto = filtros_libres
+        if texto and col in df_filtrado.columns:
+            # Eliminamos nulos antes para evitar errores
+            df_filtrado = df_filtrado.dropna(subset=[col])
+
+            # Busqueda case-insensitive de subcadena
+            df_filtrado = df_filtrado[df_filtrado[col].astype(str).str.contains(texto, case=False, na=False)]
+
+    # Aplicar filtros exactos
+    if filtros_exactos:
+        for col, valores in filtros_exactos.items():
+            if not valores or col not in df_filtrado.columns:
+                continue # Si la lista de valores esta vacia o la columna no existe, no aplicamos filtro
+
+            # Eliminamos nulos para esta columna especifica
+            df_filtrado = df_filtrado.dropna(subset=[col])
+
+            # A. Busqueda de texto libre
+            if isinstance(valores, str):
+                df_filtrado = df_filtrado[df_filtrado[col].astype(str).str.contains(valores, case=False, na=False)]
+            
+            # B. Rango de fechas
+            elif isinstance(valores, (list, tuple)) and len(valores) == 2 and isinstance(valores[0], pd.Timestamp):
+                # Aseguramos que la columna sea de tipo datetime para comparar con las fechas seleccionadas
+                col_fechas = pd.to_datetime(df_filtrado[col], errors='coerce')
+
+                # Filtramos por el rango de fechas seleccionado
+                df_filtrado = df_filtrado[col_fechas.between(valores[0], valores[1])]
+
+            # C. Busqueda de valores multiples
+            elif isinstance(valores, list):
+                # .isin() verifica si el valor de la fila esta dentro de la lista de valores seleccionados
+                df_filtrado = df_filtrado[df_filtrado[col].isin(valores)]
+    return df_filtrado
