@@ -29,7 +29,7 @@ st.title("🔍 Búsqueda Avanzada")
 
 # Columnas de prueba
 columnas = {
-    'ID': 'id',
+    'ID': ['id', 'gbifID'],
     'Nombre científico': 'scientificName',
     'Nombre del organismo': 'organismName',
     'Observador': 'recordedBy',
@@ -42,7 +42,7 @@ columnas = {
     'Longitud': ['decimalLongitude', 'longitudeDecimal'],
     'Reino': 'kingdom',
     'Clase': 'class',
-    'Familia': 'familiy',
+    'Familia': 'family',
     'Género': 'genus'
 }
 
