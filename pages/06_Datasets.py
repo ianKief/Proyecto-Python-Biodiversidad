@@ -78,3 +78,18 @@ for archivo in directorio.glob("*.csv"):
     
 if comparativa:
     st.dataframe(comparativa, use_container_width=True, hide_index=True)
+ 
+
+st.divider()
+st.subheader("Documentación")
+
+dir_docs = Path(__file__).parent.parent / "documentation"
+docs = [f.name for f in dir_docs.glob("*.md")]
+
+if docs:
+    doc_seleccionado = st.selectbox("Seleccioná un documento", docs) 
+    with open(dir_docs / doc_seleccionado, encoding="utf-8") as f:
+        contenido = f.read()
+    st.markdown(contenido)
+else:
+    st.warning("No hay documentos disponibles en documentation/")
