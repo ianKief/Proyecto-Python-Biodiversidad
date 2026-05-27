@@ -37,7 +37,7 @@ def obtener_dataset(nombre_dataset, delimitador=",", usecols=None):
     if not ruta.exists():
         msj_error_archivo(f"{nombre_dataset}_procesado.csv")
         return None
-    return pd.read_csv(ruta, sep=delimitador)
+    return pd.read_csv(ruta, sep=delimitador, usecols=usecols)
 
 def listar_columnas(dataset,archivo,delimitador=","):
     
