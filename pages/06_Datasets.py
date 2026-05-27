@@ -10,8 +10,10 @@ st.set_page_config(
 )
 st.title("Datasets disponibles")
 
+# ruta a directorio de datasets procesados
 directorio = Path(__file__).parent.parent / "processed_datasets"
 
+# Recorremos los archivos csv del directorio y obtenemos su nombre, tamaño y fecha de última modificación
 datos = []
 for archivo in directorio.glob("*.csv"):
     stat = archivo.stat()
@@ -29,6 +31,7 @@ else:
 st.divider()
 st.subheader("Detalle de dataset")
 
+# Si hay datasets, permitimos seleccionar uno para mostrar su detalle
 if datos:
     nombres = [d["Nombre"] for d in datos]
     seleccionado = st.selectbox("Seleccioná un dataset para ver su detalle", nombres)
@@ -37,12 +40,12 @@ if datos:
         sep = detectar_separador(directorio / seleccionado)
         df = pd.read_csv(directorio / seleccionado, sep=sep, encoding="utf-8", on_bad_lines="skip")
 
+        # Mostramos métricas básicas como cantidad de registros y columnas
         st.metric("Total de registros", len(df))
-    
         st.write("Porcentaje de valores nulos por columna:")
         if len(df) > 0:
-            nulos = (df.isna().sum() / len(df) * 100).round(2).reset_index()
-            nulos.columns = ["Columna", "% nulos"]
+            nulos = (df.isna().sum() / len(df) * 100).round(2).reset_index() 
+            nulos.columns = ["Columna", "% nulos"] 
         else:
             nulos = pd.DataFrame({
                 "Columna": df.columns,
@@ -59,9 +62,9 @@ st.divider()
 st.subheader("Tabla comparativa de datasets")
 
 comparativa = []
-for archivo in directorio.glob("*.csv"):
-    
-    sep = detectar_separador(archivo) # funcion en src/dataset_utils.py
+# Recorremos nuevamente los datasets para calcular métricas comparativas como porcentaje de coordenadas válidas, fechas válidas y completitud promedio
+for archivo in directorio.glob("*.csv"):    
+    sep = detectar_separador(archivo) 
     df_comp = pd.read_csv(archivo, sep=sep, encoding="utf-8", on_bad_lines='skip')
 
     pct_coords = cordenadas_validas(df_comp)
@@ -83,6 +86,7 @@ if comparativa:
 st.divider()
 st.subheader("Documentación")
 
+# Mostramos una lista de documentos disponibles en documentation/ para que el usuario pueda seleccionar uno y ver su contenido
 dir_docs = Path(__file__).parent.parent / "documentation"
 docs = [f.name for f in dir_docs.glob("*.md")]
 
