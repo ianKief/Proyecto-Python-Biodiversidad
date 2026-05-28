@@ -43,7 +43,8 @@ columnas = {
     'Reino': 'kingdom',
     'Clase': 'class',
     'Familia': 'family',
-    'Género': 'genus'
+    'Género': 'genus',
+    'Sexo': 'sex'
 }
 
 def obtener_columna_real(df, concepto):
