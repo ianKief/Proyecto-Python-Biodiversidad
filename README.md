@@ -53,3 +53,26 @@ pip install python-dateutil
 ```
 
 Esto se necesita para que funcione el modulo de Validacion
+
+# Documentación general
+
+## 1. Campos de relevancia
+
+Se define a continuación una lista de campos que son considerados relevantes a la hora de la búsqueda, análisis y muestra de información
+
+- ID
+- Nombre científico
+- Nombre del organismo
+- Observador
+- Fecha de observación
+- Habitat
+- Continente
+- País
+- Provincia o estado
+- Latitud
+- Longitud
+- Reino
+- Clase
+- Familia
+- Género
+- Sexo
