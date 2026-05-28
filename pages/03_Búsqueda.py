@@ -22,7 +22,7 @@ if not dataset:
 df = cargar_dataset_cache(dataset)
 
 if df.empty:
-    st.error("No se pudo cargar el dataset. Por favor, verifica tu selección.")
+    st.error("No se pudo cargar el dataset o el mismo esta vacío. Por favor, verifica tu selección.")
     st.stop()
 
 st.title("🔍 Búsqueda Avanzada")
@@ -65,9 +65,22 @@ def obtener_columna_real(df, concepto):
             
     return None # Si no encontro ninguno de los sinónimos
 
+col_id = obtener_columna_real(df, 'ID')
+col_nombre_cientifico = obtener_columna_real(df, 'Nombre científico')
+col_nombre_organismo = obtener_columna_real(df, 'Nombre del organismo')
+col_observador = obtener_columna_real(df, 'Observador')
+col_fecha_observacion = obtener_columna_real(df, 'Fecha de observación')
+col_habitat = obtener_columna_real(df, 'Habitat')
+col_continente = obtener_columna_real(df, 'Continente')
 col_pais = obtener_columna_real(df, 'País')
+col_provincia = obtener_columna_real(df, 'Provincia')
 col_latitud = obtener_columna_real(df, 'Latitud')
 col_longitud = obtener_columna_real(df, 'Longitud')
+col_reino = obtener_columna_real(df, 'Reino')
+col_clase = obtener_columna_real(df, 'Clase')
+col_familia = obtener_columna_real(df, 'Familia')
+col_genero = obtener_columna_real(df, 'Género')
+col_sexo = obtener_columna_real(df, 'Sexo')
 
 # Busqueda libre
 st.header("Búsqueda General")
@@ -137,3 +150,19 @@ filtro_libre = (col_busqueda, valor_busqueda) if valor_busqueda else None
 df_resultados = lec.buscar_registros(df, filtros_activos, filtro_libre)
 
 st.divider()
+
+# Muestra de resultados
+st.subheader("Resultados de la búsqueda")
+if df_resultados.empty:
+    st.warning("No se encontraron resultados que coincidan con los criterios de búsqueda.")
+else:
+    # Defino las columnas a mostrar en el resultado, solo las que existan en el dataset
+    columnas_relevantes = [col_nombre_cientifico,
+                           col_fecha_observacion,
+                           col_pais,
+                           col_provincia,
+                           col_latitud,
+                           col_longitud]
+    columnas_finales = [col for col in columnas_relevantes if col is not None]
+
+    st.dataframe(df_resultados.head(20)[columnas_finales], use_container_width=True, hide_index=True)
