@@ -44,7 +44,6 @@ pagina_busqueda = st.Page("pages/03_Búsqueda.py", title="Búsqueda", icon="🔍
 pagina_visualizacion = st.Page("pages/04_Visualización.py", title="Visualización", icon="📊")
 pagina_gestion = st.Page("pages/05_Gestion de Registros.py", title="Gestión", icon="🗂️")
 pagina_datasets = st.Page("pages/06_Datasets.py", title="Datasets", icon="📁")
-pagina_ficha = st.Page("pages/07_Ficha de Datos.py", title="Ficha", icon="📄")
 
-pg = st.navigation([pagina_inicio, pagina_estado, pagina_busqueda, pagina_visualizacion, pagina_gestion, pagina_datasets, pagina_ficha])
+pg = st.navigation([pagina_inicio, pagina_estado, pagina_busqueda, pagina_visualizacion, pagina_gestion, pagina_datasets])
 pg.run()
