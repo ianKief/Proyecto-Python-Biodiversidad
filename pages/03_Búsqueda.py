@@ -194,16 +194,58 @@ else:
     if col_genero: dict_renombres[col_genero] = "Género"
     if col_sexo: dict_renombres[col_sexo] = "Sexo"
 
-    df_vista = df_resultados.head(20)[columnas_finales].rename(columns=dict_renombres)
+    df_vista = df_resultados[columnas_finales].rename(columns=dict_renombres)
 
-    st.dataframe(df_vista, use_container_width=True, hide_index=True)
+    # Logica de paginacion
+    TAM_PAG = 20
+    total_registros = len(df_vista)
+    total_pags = (total_registros // TAM_PAG) + (1 if total_registros % TAM_PAG > 0 else 0) # Calculo del total de paginas (division entera + 1 si hay resto)
+
+    if 'pagina_actual' not in st.session_state:
+        st.session_state['pagina_actual'] = 1
+    
+    # Control de seguridad: si el usuario aplica un nuevo filtro que reduce el total de paginas, vuelve a la primera
+    if st.session_state['pagina_actual'] > total_pags:
+        st.session_state['pagina_actual'] = 1
+
+    # Calculamos desde que fila hasta que fila mostrar
+    inicio = (st.session_state['pagina_actual'] - 1) * TAM_PAG
+    fin = inicio + TAM_PAG
+
+    # Recortamos el dataframe usando .iloc
+    df_pagina = df_vista.iloc[inicio:fin]
+
+    # Mostramos solo la pagina actual
+    st.dataframe(df_pagina, use_container_width=True, hide_index=True)
+
+    # Controles de paginacion
+    col_prev, col_info, col_next = st.columns([1,2,1])
+    with col_prev:
+        # Boton anterior (se desactiva si estamos en la primera pagina)
+        if st.button("⬅️ Anterior", disabled=(st.session_state['pagina_actual'] == 1)):
+            st.session_state['pagina_actual'] -= 1
+            st.rerun() # Recarga la pagina para actualizar la vista
+
+    with col_info:
+        # Texto centrado que dice "Página X de Y"
+        st.markdown(f"<div style='text-align: center; margin-top: 10px;'>Página <b>{st.session_state['pagina_actual']}</b> de <b>{total_pags}</b></div>", unsafe_allow_html=True)
+
+    with col_next:
+        # Boton siguiente (se desactiva si llegamos a la ultima página)
+        if st.button("Siguiente ➡️", disabled=(st.session_state['pagina_actual'] == total_pags)):
+            st.session_state['pagina_actual'] += 1
+            st.rerun()
+            
+    st.divider()
 
     # Acceso al detalle de un registro
-    st.markdown("### Detalle de un registro")
+    st.markdown("### 🔍 Detalle de un registro")
     if col_id:
         id_detalle = st.selectbox("Seleccionar ID para ver detalle:", df_resultados[col_id].dropna().unique())
         if id_detalle:
-            registro_detalle = df_resultados[df_resultados[col_id] == id_detalle].iloc[0]
-            st.write(registro_detalle.to_frame().T)  # Muestra el registro completo en formato tabla
+            registro_detalle = df_resultados[df_resultados[col_id] == id_detalle].iloc[0,1:] # Obtenemos la fila del registro seleccionado (omitiendo la columna ID)
+            df_detalle = registro_detalle.to_frame(name="Valor").reset_index()
+            df_detalle = df_detalle.rename(columns={"index": "Campo"})
+            st.dataframe(df_detalle, use_container_width=True, hide_index=True)
     else:
         st.caption("No se puede mostrar el detalle de un registro porque no se encontró una columna de ID en el dataset.")
