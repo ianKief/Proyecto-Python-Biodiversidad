@@ -24,6 +24,53 @@ if (df.empty):
     st.warning("El dataset está vacío. No se pueden generar visualizaciones.")
     st.stop()
 
+#Ejercicio 3.A
+st.subheader("Distribución de registros por país o por provincia")
+st.write(f"Aca se muestra un grafico de la distribucion de registros por país o por provincia del dataset: {st.session_state['dataset']}")
+eleccion=st.selectbox("Selecciona como quiere que sea la distribucion", ("pais","provincia"))
+
+if eleccion=="pais":
+    campo=[datos for datos in df.columns if "country" in datos.lower()][0]
+elif eleccion=="provincia":
+    if "stateProvince" in df.columns:
+        campo="stateProvince"
+    else:
+        campo="locality"
+
+try:
+    total=df[campo].value_counts()
+    if total.empty:
+        st.warning(f"No se encontraron datos para la columna {campo}.")
+
+    if len(total)>1:
+        cantidad=st.slider("Cantidad de datos a mostrar", min_value=1, max_value=total.shape[0], value=3)
+        datos=total.head(cantidad)
+    
+        if eleccion=="pais":
+            if campo=="countryCode":
+                datos.index=datos.index.map(lambda x: pc.countries.get(alpha_2=x).name if pc.countries.get(alpha_2=x) else x)
+            plt.figure(figsize=(10, 5))
+            plt.bar(datos.index, datos.values)
+            plt.xticks(rotation=90)
+            plt.title("Distribución de registros por país")
+            plt.xlabel("País")
+            plt.ylabel("Cantidad de registros")
+            st.pyplot(plt)
+        else:
+            plt.figure(figsize=(10, 5))
+            plt.bar(datos.index, datos.values)
+            plt.xticks(rotation=90)
+            plt.title("Distribución de registros por provincia")
+            plt.xlabel("Provincia")
+            plt.ylabel("Cantidad de registros")
+            st.pyplot(plt)
+    else:
+        st.warning(f"No se puede hacer la distribucion por {eleccion} porque todos los registros son del mismo lugar: {total.index[0]}.")
+
+except Exception as e:
+    st.error(f"No se pudo generar la gráfica de distribución por {eleccion}. Asegúrate de que la columna correspondiente exista en el dataset. Error: {e}")
+
+#Ejercicio 3.B
 st.subheader("Cantidad de registros por año")
 st.write(f"Aca se muestra un grafico de la cantidad de registros por año del dataset: {st.session_state['dataset']}")
 
@@ -52,6 +99,8 @@ try:
 except:
     st.error("No se pudo generar la gráfica de registros por año. Asegúrate de que la columna 'eventDate' exista")
 
+
+#Ejercicio 3.C
 st.subheader("Distribución por clase, orden o familia")
 st.write(f"Aca se muestra un grafico de la distribucion de registros por clase, orden o familia del dataset: {st.session_state['dataset']}")
 
