@@ -249,3 +249,41 @@ else:
             st.dataframe(df_detalle, use_container_width=True, hide_index=True)
     else:
         st.caption("No se puede mostrar el detalle de un registro porque no se encontró una columna de ID en el dataset.")
+
+    st.divider()
+    
+    # Resumen estadistico
+    st.markdown("### 📊 Resumen Estadístico")
+
+    c1, c2, c3, c4 = st.columns(4)
+    
+    # Funcion segura para contar unicos: si la columna no existe (None), devuelve 0
+    def contar_unicos(columna):
+        if columna and columna in df_resultados.columns:
+            return df_resultados[columna].nunique()
+        return 0
+
+    c1.metric("Especies Únicas", contar_unicos(col_nombre_cientifico))
+    c2.metric("Países", contar_unicos(col_pais))
+    c3.metric("Provincias", contar_unicos(col_provincia))
+    c4.metric("Observadores", contar_unicos(col_observador))
+
+    st.divider()
+
+    # Boton para descargar resultados
+    st.markdown("### 💾 Exportar")
+    
+    # Generamos el CSV a partir del DataFrame filtrado
+    csv_data = df_resultados.to_csv(index=False).encode('utf-8')
+    
+    # Usamos datetime para ponerle la fecha de hoy al nombre del archivo
+    fecha_hoy = datetime.now().strftime('%Y-%m-%d')
+    
+    nombre_archivo_export = f"{st.session_state.get('dataset_seleccionado', 'dataset')}_{fecha_hoy}.csv"
+    
+    st.download_button(
+        label="📥 Descargar resultados filtrados como CSV",
+        data=csv_data,
+        file_name=nombre_archivo_export,
+        mime='text/csv',
+    )
