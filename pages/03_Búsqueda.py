@@ -198,3 +198,12 @@ else:
 
     st.dataframe(df_vista, use_container_width=True, hide_index=True)
 
+    # Acceso al detalle de un registro
+    st.markdown("### Detalle de un registro")
+    if col_id:
+        id_detalle = st.selectbox("Seleccionar ID para ver detalle:", df_resultados[col_id].dropna().unique())
+        if id_detalle:
+            registro_detalle = df_resultados[df_resultados[col_id] == id_detalle].iloc[0]
+            st.write(registro_detalle.to_frame().T)  # Muestra el registro completo en formato tabla
+    else:
+        st.caption("No se puede mostrar el detalle de un registro porque no se encontró una columna de ID en el dataset.")
