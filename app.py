@@ -19,12 +19,13 @@ def actualizar_seleccion():
 with st.sidebar.expander("Información del dataset seleccionado"):
     st.title("⚙️ Configuración")
     opciones = ["iadiza", "inaturalist", "xeno-canto"]
-    index_actual = opciones.index(st.session_state['dataset']) if st.session_state['dataset'] in opciones else 0
-    st.selectbox("Selecciona un dataset", 
-                         opciones, 
-                         key='dataset_seleccionado', 
-                         index=index_actual,
-                     on_change=actualizar_seleccion)
+    index_actual = opciones.index(st.session_state['dataset']) if st.session_state['dataset'] in opciones else None
+    st.selectbox("Selecciona un dataset",
+                        opciones, 
+                        key='dataset_seleccionado', 
+                        index=index_actual,
+                     on_change=actualizar_seleccion,
+                     placeholder="Selecciona un dataset")
     st.write("---")
     st.info(f"📁 Dataset activo: **{st.session_state['dataset']}**")
     
