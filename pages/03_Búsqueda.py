@@ -30,21 +30,21 @@ st.title("🔍 Búsqueda Avanzada")
 # Columnas de prueba
 columnas = {
     'ID': ['id', 'gbifID'],
-    'Nombre científico': 'scientificName',
-    'Nombre del organismo': 'organismName',
-    'Observador': 'recordedBy',
-    'Fecha de observación': 'eventDate',
-    'Habitat': 'habitat',
-    'Continente': 'continent',
+    'Nombre científico': ['scientificName'],
+    'Nombre del organismo': ['organismName'],
+    'Observador': ['recordedBy'],
+    'Fecha de observación': ['eventDate'],
+    'Habitat': ['habitat'],
+    'Continente': ['continent'],
     'País': ['country', 'countryCode'],
-    'Provincia': 'stateProvince',
+    'Provincia': ['stateProvince'],
     'Latitud': ['decimalLatitude', 'latitudeDecimal'],
     'Longitud': ['decimalLongitude', 'longitudeDecimal'],
-    'Reino': 'kingdom',
-    'Clase': 'class',
-    'Familia': 'family',
-    'Género': 'genus',
-    'Sexo': 'sex'
+    'Reino': ['kingdom'],
+    'Clase': ['class'],
+    'Familia': ['family'],
+    'Género': ['genus'],
+    'Sexo': ['sex']
 }
 
 def obtener_columna_real(df, concepto):
@@ -96,8 +96,8 @@ filtros_activos = {}
 
 # Funcion auxiliar para obtener valores unicos omitiendo nulos
 def valores_unicos(columna):
-    if columna in df.columns:
-        return sorted(df[columna].dropna().unique().tolist())
+    if columna and columna in df.columns:
+        return sorted(df[columna].astype(str).str.strip().dropna().unique().tolist())
     return []
 
 col1, col2 = st.columns(2)
@@ -105,41 +105,41 @@ col3, col4 = st.columns(2)
 
 # Columnas para buscar por nombre cientifico, observador, pais y provincia (si existen en el dataset)
 with col1:
-    if columnas['Nombre científico'] in df.columns:
-        sel_cientifico = st.multiselect("Seleccionar Nombre científico:", valores_unicos(columnas['Nombre científico']))
+    if col_nombre_cientifico in df.columns:
+        sel_cientifico = st.multiselect("Seleccionar Nombre científico:", valores_unicos(col_nombre_cientifico))
         if sel_cientifico:
-            filtros_activos[columnas['Nombre científico']] = sel_cientifico
+            filtros_activos[col_nombre_cientifico] = sel_cientifico
 
 with col2:
-    if columnas['Observador'] in df.columns:
+    if col_observador in df.columns:
         sel_observador = st.text_input("Seleccionar Observador:", placeholder="Escribe el observador...")
         if sel_observador:
-            filtros_activos[columnas['Observador']] = sel_observador
+            filtros_activos[col_observador] = sel_observador
 
 with col3:
     if col_pais:
         sel_pais = st.multiselect("Seleccionar País:", valores_unicos(col_pais))
         if sel_pais:
-            filtros_activos[columnas['País']] = sel_pais
+            filtros_activos[col_pais] = sel_pais
 
 with col4:
-    if columnas['Provincia'] in df.columns:
+    if col_provincia in df.columns:
         # Si se selecciona un pais, filtrar las provincias disponibles segun ese pais
-        opciones_prov = df[df[columnas['País']].isin(sel_pais)][columnas['Provincia']].dropna().unique().tolist() if sel_pais else valores_unicos(columnas['Provincia'])
+        opciones_prov = df[df[col_pais].isin(sel_pais)][col_provincia].dropna().unique().tolist() if sel_pais else valores_unicos(col_provincia)
         sel_provincia = st.multiselect("Seleccionar Provincia o Estado:", opciones_prov)
         if sel_provincia:
-            filtros_activos[columnas['Provincia']] = sel_provincia
+            filtros_activos[col_provincia] = sel_provincia
 
 # Buscar por rango de fechas
-if columnas['Fecha de observación'] in df.columns:
+if col_fecha_observacion in df.columns:
     # Intentamos convertir la columna a formato fecha
-    fechas_validas = pd.to_datetime(df[columnas['Fecha de observación']], errors='coerce').dropna()
+    fechas_validas = pd.to_datetime(df[col_fecha_observacion], errors='coerce').dropna()
     if not fechas_validas.empty:
         min_fecha = fechas_validas.min()
         max_fecha = fechas_validas.max()
         sel_fecha = st.date_input("Seleccionar rango de fechas:", value=[], min_value=min_fecha, max_value=max_fecha)
         if len(sel_fecha) == 2:
-            filtros_activos[columnas['Fecha de observación']] = [pd.to_datetime(sel_fecha[0]), pd.to_datetime(sel_fecha[1])]
+            filtros_activos[col_fecha_observacion] = [pd.to_datetime(sel_fecha[0]), pd.to_datetime(sel_fecha[1])]
     else:
         st.info("El dataset no contiene fechas válidas para filtrar.")
 else:
@@ -157,12 +157,44 @@ if df_resultados.empty:
     st.warning("No se encontraron resultados que coincidan con los criterios de búsqueda.")
 else:
     # Defino las columnas a mostrar en el resultado, solo las que existan en el dataset
-    columnas_relevantes = [col_nombre_cientifico,
+    columnas_relevantes = [col_id,
+                           col_nombre_cientifico,
+                           col_nombre_organismo,
+                           col_observador,
                            col_fecha_observacion,
+                           col_habitat,
+                           col_continente,
                            col_pais,
                            col_provincia,
                            col_latitud,
-                           col_longitud]
+                           col_longitud,
+                           col_reino,
+                           col_clase,
+                           col_familia,
+                           col_genero,
+                           col_sexo]
+    # En la tabla de resultados solo se muestran las columnas que existen en el dataset
     columnas_finales = [col for col in columnas_relevantes if col is not None]
 
-    st.dataframe(df_resultados.head(20)[columnas_finales], use_container_width=True, hide_index=True)
+    dict_renombres = {}
+    if col_id: dict_renombres[col_id] = "ID"
+    if col_nombre_cientifico: dict_renombres[col_nombre_cientifico] = "Nombre Científico"
+    if col_nombre_organismo: dict_renombres[col_nombre_organismo] = "Nombre del Organismo"
+    if col_observador: dict_renombres[col_observador] = "Observador"
+    if col_fecha_observacion: dict_renombres[col_fecha_observacion] = "Fecha"
+    if col_habitat: dict_renombres[col_habitat] = "Habitat"
+    if col_continente: dict_renombres[col_continente] = "Continente"
+    if col_pais: dict_renombres[col_pais] = "País"
+    if col_provincia: dict_renombres[col_provincia] = "Provincia"
+    if col_latitud: dict_renombres[col_latitud] = "Latitud"
+    if col_longitud: dict_renombres[col_longitud] = "Longitud"
+    if col_reino: dict_renombres[col_reino] = "Reino"
+    if col_clase: dict_renombres[col_clase] = "Clase"
+    if col_familia: dict_renombres[col_familia] = "Familia"
+    if col_genero: dict_renombres[col_genero] = "Género"
+    if col_sexo: dict_renombres[col_sexo] = "Sexo"
+
+    df_vista = df_resultados.head(20)[columnas_finales].rename(columns=dict_renombres)
+
+    st.dataframe(df_vista, use_container_width=True, hide_index=True)
+
