@@ -2,6 +2,8 @@ import streamlit as st
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
+import pycountry as pc
+from src.lectura import analisis_nulos
 
 
 st.set_page_config(
@@ -16,6 +18,10 @@ st.write(f"Aca se muestra un grafico de la cantidad de registros por año del da
 rute=os.path.join("processed_datasets", f"{st.session_state['dataset']}_procesado.csv")
 if not rute or not os.path.exists(rute):
     st.warning("No se encontró el dataset procesado. Por favor, selecciona un dataset válido en la barra lateral.")
+    st.stop()
+
+if not(os.access(rute, os.R_OK)):
+    st.error("No se tiene permiso para leer el archivo del dataset. Por favor, verifica los permisos del archivo.")
     st.stop()
 
 df=pd.read_csv(rute)
@@ -118,3 +124,28 @@ try:
     
 except Exception as e:
     st.error(f"La columna {opcion} no existe en el dataset")
+
+#Ejercicio 3.D
+st.subheader("porcentaje de registros no nulos por columna")
+st.write(f"Aca se muestra un grafico del porcentaje de registros no nulos por columna del dataset: {st.session_state['dataset']}")
+
+nulos=analisis_nulos(st.session_state['dataset'], st.session_state['archivo'])
+
+if not nulos:
+    st.warning("No se pudo realizar el análisis de nulos. Asegúrate de que el dataset esté correctamente procesado.")
+    st.stop()
+    
+eleccion=st.slider("Cantidad de columnas a mostrar", min_value=1, max_value=len(nulos["Promedio nulos por columna"]), value=3,key="slider_nulos")
+nulos=pd.Series(nulos["Promedio nulos por columna"]).head(eleccion)
+
+
+try:
+    plt.figure(figsize=(10, 5))
+    plt.barh(nulos.index, nulos.values*100)  # Multiplicar por 100 para obtener porcentajes
+    plt.xticks(rotation=90)
+    plt.title("Porcentaje de registros no nulos por columna")
+    plt.xlabel("Columna")
+    plt.ylabel("Porcentaje de registros no nulos")
+    st.pyplot(plt)
+except Exception as e:
+    st.error(f"No se pudo generar la gráfica de porcentaje de registros no nulos. Asegúrate de que el análisis de nulos se haya realizado correctamente. Error: {e}")
