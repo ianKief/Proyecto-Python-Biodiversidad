@@ -62,21 +62,17 @@ st.divider()
 st.subheader("Tabla comparativa de datasets")
 
 comparativa = []
-# Recorremos nuevamente los datasets para calcular métricas comparativas como porcentaje de coordenadas válidas, fechas válidas y completitud promedio
+# Recorremos los datasets para calcular métricas comparativas. Nombre, cantidad de registros, porcentaje de coordenadas válidas, fechas válidas y completitud promedio
 for archivo in directorio.glob("*.csv"):    
     sep = detectar_separador(archivo) 
     df_comp = pd.read_csv(archivo, sep=sep, encoding="utf-8", on_bad_lines='skip')
-
-    pct_coords = cordenadas_validas(df_comp)
-    pct_fechas = fechas_validas(df_comp)
-    pct_completitud = completitud_promedio(df_comp) 
     
     comparativa.append({
         "Dataset": archivo.name,
         "Registros": len(df_comp),
-        "% Coordenadas válidas": pct_coords,
-        "% Fechas válidas": pct_fechas,
-        "% Completitud promedio": pct_completitud,
+        "% Coordenadas válidas": cordenadas_validas(df_comp),
+        "% Fechas válidas": fechas_validas(df_comp),
+        "% Completitud promedio": completitud_promedio(df_comp),
     })
     
 if comparativa:
