@@ -113,3 +113,58 @@ for _, row in df_validos.iterrows():
 
 st.markdown("#### Mapa de ocurrencias")
 resultado_mapa = st_folium(mapa, width=900, height=500)
+
+# Ficha taxonómica al seleccionar un punto
+if resultado_mapa and resultado_mapa.get('last_clicked'):
+    lat_click = resultado_mapa['last_clicked']['lat']
+    lon_click = resultado_mapa['last_clicked']['lng']
+
+    # Buscar la fila más cercana al punto clickeado
+    df_validos['_dist'] = (
+        (df_validos['_lat'] - lat_click).abs() +
+        (df_validos['_lon'] - lon_click).abs()
+    )
+    fila = df_validos.loc[df_validos['_dist'].idxmin()]
+
+    st.divider()
+    st.markdown("### 📋 Ficha de la observación")
+
+    # Columnas taxonómicas y de observación a mostrar
+    campos = {
+        'Reino':        obtener_columna_real(df, 'Reino'),
+        'Filo':         obtener_columna_real(df, 'Filo'),
+        'Clase':        obtener_columna_real(df, 'Clase'),
+        'Orden':        obtener_columna_real(df, 'Orden'),
+        'Familia':      obtener_columna_real(df, 'Familia'),
+        'Género':       obtener_columna_real(df, 'Género'),
+        'Especie':      col_cientifico,
+        'País':         col_pais,
+        'Provincia':    obtener_columna_real(df, 'Provincia'),
+        'Latitud':      col_lat,
+        'Longitud':     col_lon,
+        'Fecha':        obtener_columna_real(df, 'Fecha'),
+        'Observador':   obtener_columna_real(df, 'Observador')
+    }
+
+    # Construir tabla estilo Wikipedia: Campo | Valor
+    ficha = []
+    for label, col in campos.items():
+        if col and col in fila.index and pd.notna(fila[col]):
+            ficha.append({'Campo': label, 'Valor': str(fila[col])})
+        else:
+            ficha.append({'Campo': label, 'Valor': '—'})
+
+    df_ficha = pd.DataFrame(ficha)
+    st.dataframe(df_ficha, use_container_width=True, hide_index=True)
+
+# Mostrar leyenda de colores
+with st.expander("🎨 Ver leyenda de colores"):
+    cols = st.columns(3)
+    for i, (cat, color) in enumerate(list(color_map.items())[:10]): # Limitar a 10 categorías para no saturar la leyenda
+        cols[i % 3].markdown(
+            f"<span style='color:{color}'>●</span> {cat}",
+            unsafe_allow_html=True
+        )
+
+if st.button("← Volver a Búsqueda"):
+    st.switch_page("pages/03_Búsqueda.py")
