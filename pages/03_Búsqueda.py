@@ -287,3 +287,7 @@ else:
         file_name=nombre_archivo_export,
         mime='text/csv',
     )
+
+if st.button("Ver ficha"):
+    st.session_state['resultados_ficha'] = df_resultados
+    st.switch_page("pages/07_Ficha de Datos.py")
