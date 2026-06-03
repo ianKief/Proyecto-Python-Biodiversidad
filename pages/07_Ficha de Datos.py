@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import folium
+from streamlit_folium import st_folium
+from folium.plugins import MarkerCluster
 from src.validacion import verificar_rango
 from src.dataset_utils import obtener_columna_real
 
@@ -45,3 +48,68 @@ st.info(f"📍 Mostrando **{len(df_validos)}** registros en el mapa. "
 if df_validos.empty:
     st.warning("Ningún registro tiene coordenadas válidas para mostrar en el mapa.")
     st.stop()
+
+# Selector de criterio de color
+col_cientifico = obtener_columna_real(df, 'Nombre científico')
+col_pais = obtener_columna_real(df, 'País')
+col_familia = obtener_columna_real(df, 'Familia')
+
+opciones_color = {}
+if col_pais: opciones_color['País'] = col_pais
+if col_cientifico: opciones_color['Especie'] = col_cientifico
+if col_familia: opciones_color['Familia'] = col_familia
+
+criterio_label = st.selectbox("🎨 Colorear puntos por:", list(opciones_color.keys()))
+criterio_col = opciones_color[criterio_label]
+
+# Generar colores por categoría
+categorias = df_validos[criterio_col].fillna('Sin datos').astype(str).unique()
+paleta = [
+    '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231',
+    '#911eb4','#42d4f4','#f032e6','#bfef45','#fabebe',
+    '#469990','#dcbeff','#9A6324','#fffac8','#800000',
+    '#aaffc3','#808000','#ffd8b1','#000075','#a9a9a9'
+]
+color_map = {cat: paleta[i % len(paleta)] for i, cat in enumerate(categorias)}
+
+# Crear mapa centrado en el promedio de coordenadas
+lat_centro = df_validos['_lat'].mean()
+lon_centro = df_validos['_lon'].mean()
+
+mapa = folium.Map(location=[lat_centro, lon_centro], zoom_start=4)
+cluster = MarkerCluster(options={
+        'spiderfyOnMaxZoom': True,
+        'spiderfyDistanceMultiplier': 2,
+        'zoomToBoundsOnClick': True,
+    }
+).add_to(mapa)
+
+# Detectar columna ID
+col_id = obtener_columna_real(df, 'ID')
+
+for _, row in df_validos.iterrows():
+    categoria = str(row[criterio_col]) if criterio_col in row and pd.notna(row[criterio_col]) else 'Sin datos'
+    color = color_map.get(categoria, '#808080')
+    
+    id_val = str(row[col_id]) if col_id else '—'
+    nombre = str(row[col_cientifico]) if col_cientifico else '—'
+    
+    popup_html = f"""
+        <b>ID:</b> {id_val}<br>
+        <b>Especie:</b> {nombre}<br>
+        <b>{criterio_label}:</b> {categoria}
+    """
+    
+    folium.CircleMarker(
+        location=[row['_lat'], row['_lon']],
+        radius=6,
+        color=color,
+        fill=True,
+        fill_color=color,
+        fill_opacity=0.8,
+        popup=folium.Popup(popup_html, max_width=250),
+        tooltip=nombre
+    ).add_to(cluster)
+
+st.markdown("#### Mapa de ocurrencias")
+resultado_mapa = st_folium(mapa, width=900, height=500)
