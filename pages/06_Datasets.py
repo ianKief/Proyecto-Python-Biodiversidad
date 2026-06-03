@@ -64,16 +64,19 @@ st.subheader("Tabla comparativa de datasets")
 comparativa = []
 # Recorremos los datasets para calcular métricas comparativas. Nombre, cantidad de registros, porcentaje de coordenadas válidas, fechas válidas y completitud promedio
 for archivo in directorio.glob("*.csv"):    
-    sep = detectar_separador(archivo) 
-    df_comp = pd.read_csv(archivo, sep=sep, encoding="utf-8", on_bad_lines='skip')
+    try: 
+        sep = detectar_separador(archivo) 
+        df_comp = pd.read_csv(archivo, sep=sep, encoding="utf-8", on_bad_lines='skip')
     
-    comparativa.append({
-        "Dataset": archivo.name,
-        "Registros": len(df_comp),
-        "% Coordenadas válidas": cordenadas_validas(df_comp),
-        "% Fechas válidas": fechas_validas(df_comp),
-        "% Completitud promedio": completitud_promedio(df_comp),
-    })
+        comparativa.append({
+            "Dataset": archivo.name,
+            "Registros": len(df_comp),
+            "% Coordenadas válidas": cordenadas_validas(df_comp),
+            "% Fechas válidas": fechas_validas(df_comp),
+            "% Completitud promedio": completitud_promedio(df_comp),
+        })
+    except pd.errors.EmptyDataError:
+        st.error(f"El dataset {archivo.name} está vacío y no se pudo procesar.")
     
 if comparativa:
     st.dataframe(comparativa, use_container_width=True, hide_index=True)
