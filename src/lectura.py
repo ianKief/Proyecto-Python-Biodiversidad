@@ -235,7 +235,7 @@ def buscar_registros(df, filtros_exactos=None, filtros_libres=None):
             # B. Rango de fechas
             elif isinstance(valores, (list, tuple)) and len(valores) == 2 and isinstance(valores[0], pd.Timestamp):
                 # Aseguramos que la columna sea de tipo datetime para comparar con las fechas seleccionadas
-                col_fechas = pd.to_datetime(df_filtrado[col], errors='coerce')
+                col_fechas = pd.to_datetime(df_filtrado[col], errors='coerce', utc=True).dt.tz_localize(None) # Convertimos a datetime y eliminamos zona horaria para evitar problemas de comparación
 
                 # Filtramos por el rango de fechas seleccionado
                 df_filtrado = df_filtrado[col_fechas.between(valores[0], valores[1])]
