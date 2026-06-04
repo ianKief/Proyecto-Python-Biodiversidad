@@ -84,19 +84,23 @@ try:
     excluidos=fechas.isna().sum()
 
     validas=fechas.dropna()
-    años=validas.dt.year.value_counts().sort_index()
 
-    plt.figure(figsize=(10,5))
-    plt.plot(años.index, años.values, marker='o')
+    if validas.empty:
+        st.warning("No se encontraron fechas válidas en la columna 'eventDate'. No se puede generar la gráfica de registros por año.")
+    else:
+        años=validas.dt.year.value_counts().sort_index()
 
-    plt.title("cantidad de registros por año")
+        plt.figure(figsize=(10,5))
+        plt.plot(años.index, años.values, marker='o')
 
-    plt.xlabel("Año")
-    plt.ylabel("Cantidad de registros")
-    plt.grid(True)
-    st.pyplot(plt)
+        plt.title("cantidad de registros por año")
 
-    st.write(f"Se excluyeron {excluidos} registros por tener fechas no válidas o vacías.")
+        plt.xlabel("Año")
+        plt.ylabel("Cantidad de registros")
+        plt.grid(True)
+        st.pyplot(plt)
+
+        st.write(f"Se excluyeron {excluidos} registros por tener fechas no válidas o vacías.")
 except:
     st.error("No se pudo generar la gráfica de registros por año. Asegúrate de que la columna 'eventDate' exista")
 
@@ -109,13 +113,20 @@ opcion=st.selectbox("Selecciona una columna para visualizar su distribución", (
 
 try:
     total=df[opcion].value_counts()
-    cant=st.slider("Cantidad de datos a mostrar", min_value=1, max_value=total.shape[0], value=1)
-    datos=total.head(cant)
+    if total.empty:
+        st.warning(f"No se encontraron datos para la columna {columnas[opcion]}.")
+    else:
+        if total.shape[0]==1:
+            cant=total.values[0]
+            st.write("Solo hay un valor en la columna seleccionada, por lo que se mostrará la distribución de ese único valor.")
+        else:
+            cant=st.slider("Cantidad de datos a mostrar", min_value=1, max_value=total.shape[0], value=1)
+        datos=total.head(cant)
 
-    plt.figure(figsize=(10, 5))
-    plt.pie(datos.values,labels=datos.index,autopct="%1.1f%%")
-    plt.title(f"Distribución de registros por {opcion}")
-    st.pyplot(plt)
+        plt.figure(figsize=(10, 5))
+        plt.pie(datos.values,labels=datos.index,autopct="%1.1f%%")
+        plt.title(f"Distribución de registros por {opcion}")
+        st.pyplot(plt)
     
 except Exception as e:
     st.error(f"La columna {opcion} no existe en el dataset")
@@ -128,30 +139,26 @@ nulos=analisis_nulos(st.session_state['dataset'], st.session_state['archivo'])
 
 if not nulos:
     st.warning("No se pudo realizar el análisis de nulos. Asegúrate de que el dataset esté correctamente procesado.")
-    st.stop()
+else:
     
-eleccion=st.slider("Cantidad de columnas a mostrar", min_value=1, max_value=len(nulos["Promedio nulos por columna"]), value=3,key="slider_nulos")
-nulos=100-pd.Series(nulos["Promedio nulos por columna"]).head(eleccion)
+    eleccion=st.slider("Cantidad de columnas a mostrar", min_value=1, max_value=len(nulos["Promedio nulos por columna"]), value=3,      key="slider_nulos")
+    nulos=100-pd.Series(nulos["Promedio nulos por columna"]).head(eleccion)
 
 
-try:
-    plt.figure(figsize=(10, 5))
-    plt.barh(nulos.index, nulos.values)
-    plt.xticks(rotation=90)
-    plt.title("Porcentaje de registros no nulos por columna")
-    plt.xlabel("Porcentaje de registros no nulos")
-    plt.ylabel("Columnas")
-    st.pyplot(plt)
-except Exception as e:
-    st.error(f"No se pudo generar la gráfica de porcentaje de registros no nulos. Asegúrate de que el análisis de nulos se haya realizado correctamente. Error: {e}")
+    try:
+        plt.figure(figsize=(10, 5))
+        plt.barh(nulos.index, nulos.values)
+        plt.xticks(rotation=90)
+        plt.title("Porcentaje de registros no nulos por columna")
+        plt.xlabel("Porcentaje de registros no nulos")
+        plt.ylabel("Columnas")
+        st.pyplot(plt)
+    except Exception as e:
+        st.error(f"No se pudo generar la gráfica de porcentaje de registros no nulos. Asegúrate de que el análisis de nulos se haya realizado correctamente. Error: {e}")
 
 
 #Ejercicio 3.E
 ruta_carpeta=os.path.join("processed_datasets")
-
-if not os.path.exists(ruta_carpeta):
-    st.warning("No se encontró la carpeta de datasets procesados. Por favor, asegúrate de que los datasets estén procesados y ubicados en la carpeta correcta.")
-    st.stop()
 
 cant=len(os.listdir(ruta_carpeta))
 
