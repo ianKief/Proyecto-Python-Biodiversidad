@@ -33,11 +33,11 @@ if (df.empty):
 #Ejercicio 3.A
 st.subheader("Distribución de registros por país o por provincia")
 st.write(f"Aca se muestra un grafico de la distribucion de registros por país o por provincia del dataset: {st.session_state['dataset']}")
-eleccion=st.selectbox("Selecciona como quiere que sea la distribucion", ("pais","provincia"))
+eleccion=st.selectbox("Selecciona como quiere que sea la distribucion", ("Pais","Provincia"))
 
-if eleccion=="pais":
+if eleccion=="Pais":
     campo=[datos for datos in df.columns if "country" in datos.lower()][0]
-elif eleccion=="provincia":
+elif eleccion=="Provincia":
     if "stateProvince" in df.columns:
         campo="stateProvince"
     else:
@@ -49,27 +49,22 @@ try:
         st.warning(f"No se encontraron datos para la columna {campo}.")
 
     if len(total)>1:
+        if campo=="countryCode":
+            indices=total.index.map(lambda x: pc.countries.get(alpha_2=x).name if pc.countries.get(alpha_2=x) else None)
+            total = total[indices.notna()]
+            total.index = indices[indices.notna()]
+
         cantidad=st.slider("Cantidad de datos a mostrar", min_value=1, max_value=total.shape[0], value=3)
         datos=total.head(cantidad)
     
-        if eleccion=="pais":
-            if campo=="countryCode":
-                datos.index=datos.index.map(lambda x: pc.countries.get(alpha_2=x).name if pc.countries.get(alpha_2=x) else x)
-            plt.figure(figsize=(10, 5))
-            plt.bar(datos.index, datos.values)
-            plt.xticks(rotation=90)
-            plt.title("Distribución de registros por país")
-            plt.xlabel("País")
-            plt.ylabel("Cantidad de registros")
-            st.pyplot(plt)
-        else:
-            plt.figure(figsize=(10, 5))
-            plt.bar(datos.index, datos.values)
-            plt.xticks(rotation=90)
-            plt.title("Distribución de registros por provincia")
-            plt.xlabel("Provincia")
-            plt.ylabel("Cantidad de registros")
-            st.pyplot(plt)
+        plt.figure(figsize=(10, 5))
+        plt.bar(datos.index, datos.values)
+        plt.xticks(rotation=90)
+        plt.title(f"Distribución de registros por {eleccion}")
+        plt.xlabel(eleccion)
+        plt.ylabel("Cantidad de registros")
+        st.pyplot(plt)
+
     else:
         st.warning(f"No se puede hacer la distribucion por {eleccion} porque todos los registros son del mismo lugar: {total.index[0]}.")
 
