@@ -1,4 +1,5 @@
 import pandas as pd
+from src.columnas import obtener_columna_real
 
 def detectar_separador(ruta):
     with open(ruta, encoding="utf-8") as f:
@@ -9,8 +10,8 @@ def cordenadas_validas(df):
     """
     Calcula el porcentaje de coordenadas válidas en un dataframe. 
     """
-    col_lat = next((c for c in df.columns if "latitude" in c.lower()), None)
-    col_lon = next((c for c in df.columns if "longitude" in c.lower()), None)
+    col_lat = obtener_columna_real(df, 'Latitud')
+    col_lon = obtener_columna_real(df, 'Longitud')
 
     if not col_lat or not col_lon or  len(df) == 0:
         return 0.0
@@ -26,7 +27,7 @@ def fechas_validas(df):
     """
     Calcula el porcentaje de fechas válidas en un dataframe, buscando una columna que contenga "eventDate".
     """
-    col_fecha = next((c for c in df.columns if "eventDate" in c), None)
+    col_fecha = obtener_columna_real(df, 'Fecha de observación')
     if not col_fecha or len(df) == 0:
         return 0.0
     
