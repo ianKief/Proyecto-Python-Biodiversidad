@@ -17,7 +17,7 @@ if os.path.exists(log_path):
     try:
         logs = []
         with open(log_path, "r", encoding="utf-8") as archivo_log:
-            filtro = st.selectbox("Elija como quiere filtar los logs",["Sin filtro","Por fecha","Por operacion","Resumen"]              key="filtro_logs")
+            filtro = st.selectbox("Elija como quiere filtar los logs",["Sin filtro","Por fecha","Por operacion","Resumen"], key="filtro_logs")
 
             if filtro == "Por operacion":
                 operacion_filtro = st.selectbox("Seleccione la operación a filtrar", ["INSERT", "UPDATE", "DELETE", "ERROR"], key="operacion_filtro")
