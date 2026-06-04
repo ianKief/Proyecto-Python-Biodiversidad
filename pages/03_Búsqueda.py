@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import src.lectura as lec
 from datetime import datetime
+from src.columnas import obtener_columna_real, columnas
 
 @st.cache_data(show_spinner="Cargando dataset...")
 def cargar_dataset_cache(dataset):
@@ -26,44 +27,6 @@ if df.empty:
     st.stop()
 
 st.title("🔍 Búsqueda Avanzada")
-
-# Columnas de prueba
-columnas = {
-    'ID': ['id', 'gbifID'],
-    'Nombre científico': ['scientificName'],
-    'Nombre del organismo': ['organismName'],
-    'Observador': ['recordedBy'],
-    'Fecha de observación': ['eventDate'],
-    'Habitat': ['habitat'],
-    'Continente': ['continent'],
-    'País': ['country', 'countryCode'],
-    'Provincia': ['stateProvince'],
-    'Latitud': ['decimalLatitude', 'latitudeDecimal'],
-    'Longitud': ['decimalLongitude', 'longitudeDecimal'],
-    'Reino': ['kingdom'],
-    'Clase': ['class'],
-    'Familia': ['family'],
-    'Género': ['genus'],
-    'Sexo': ['sex']
-}
-
-def obtener_columna_real(df, concepto):
-    """
-    Busca en el DataFrame cual es el nombre real de la columna 
-    basandose en el diccionario de columnas. Retorna el nombre original o None.
-    """
-    if concepto not in columnas:
-        return None
-        
-    # Creamos un diccionario para mapear la version en minuscula al nombre original
-    cols_df_lower = {col.lower(): col for col in df.columns}
-    
-    # Buscamos cada alias en nuestras columnas
-    for alias in columnas[concepto]:
-        if alias.lower() in cols_df_lower:
-            return cols_df_lower[alias.lower()] # Retornamos el nombre exacto como esta en el CSV
-            
-    return None # Si no encontro ninguno de los sinónimos
 
 col_id = obtener_columna_real(df, 'ID')
 col_nombre_cientifico = obtener_columna_real(df, 'Nombre científico')
