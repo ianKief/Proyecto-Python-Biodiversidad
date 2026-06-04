@@ -54,11 +54,17 @@ if df_validos.empty:
 col_cientifico = obtener_columna_real(df, 'Nombre científico')
 col_pais = obtener_columna_real(df, 'País')
 col_familia = obtener_columna_real(df, 'Familia')
+col_provincia = obtener_columna_real(df, 'Provincia')
+col_genero = obtener_columna_real(df, 'Género')
+col_reino = obtener_columna_real(df, 'Reino')
 
 opciones_color = {}
 if col_pais: opciones_color['País'] = col_pais
+if col_provincia: opciones_color['Provincia'] = col_provincia
 if col_cientifico: opciones_color['Especie'] = col_cientifico
+if col_genero: opciones_color['Género'] = col_genero
 if col_familia: opciones_color['Familia'] = col_familia
+if col_reino: opciones_color['Reino'] = col_reino
 
 criterio_label = st.selectbox("🎨 Colorear puntos por:", list(opciones_color.keys()))
 criterio_col = opciones_color[criterio_label]
@@ -131,19 +137,19 @@ if resultado_mapa and resultado_mapa.get('last_clicked'):
 
     # Columnas taxonómicas y de observación a mostrar
     campos = {
-        'Reino':        obtener_columna_real(df, 'Reino'),
-        'Filo':         obtener_columna_real(df, 'Filo'),
-        'Clase':        obtener_columna_real(df, 'Clase'),
-        'Orden':        obtener_columna_real(df, 'Orden'),
-        'Familia':      obtener_columna_real(df, 'Familia'),
-        'Género':       obtener_columna_real(df, 'Género'),
-        'Especie':      col_cientifico,
-        'País':         col_pais,
-        'Provincia':    obtener_columna_real(df, 'Provincia'),
-        'Latitud':      col_lat,
-        'Longitud':     col_lon,
-        'Fecha':        obtener_columna_real(df, 'Fecha'),
-        'Observador':   obtener_columna_real(df, 'Observador')
+        'Reino': col_reino,
+        'Filo':  obtener_columna_real(df, 'Filo'),
+        'Clase': obtener_columna_real(df, 'Clase'),
+        'Orden': obtener_columna_real(df, 'Orden'),
+        'Familia': col_familia,
+        'Género': col_genero,
+        'Nombre cientifico': col_cientifico, 
+        'País': col_pais,
+        'Provincia': col_provincia,
+        'Latitud': col_lat,
+        'Longitud': col_lon,
+        'Fecha': obtener_columna_real(df, 'Fecha'),
+        'Observador': obtener_columna_real(df, 'Observador')
     }
 
     # Construir tabla estilo Wikipedia: Campo | Valor
