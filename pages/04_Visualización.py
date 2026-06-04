@@ -136,16 +136,16 @@ if not nulos:
     st.stop()
     
 eleccion=st.slider("Cantidad de columnas a mostrar", min_value=1, max_value=len(nulos["Promedio nulos por columna"]), value=3,key="slider_nulos")
-nulos=pd.Series(nulos["Promedio nulos por columna"]).head(eleccion)
+nulos=100-pd.Series(nulos["Promedio nulos por columna"]).head(eleccion)
 
 
 try:
     plt.figure(figsize=(10, 5))
-    plt.barh(nulos.index, nulos.values*100)  # Multiplicar por 100 para obtener porcentajes
+    plt.barh(nulos.index, nulos.values)
     plt.xticks(rotation=90)
     plt.title("Porcentaje de registros no nulos por columna")
-    plt.xlabel("Columna")
-    plt.ylabel("Porcentaje de registros no nulos")
+    plt.xlabel("Porcentaje de registros no nulos")
+    plt.ylabel("Columnas")
     st.pyplot(plt)
 except Exception as e:
     st.error(f"No se pudo generar la gráfica de porcentaje de registros no nulos. Asegúrate de que el análisis de nulos se haya realizado correctamente. Error: {e}")
