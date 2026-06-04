@@ -149,3 +149,47 @@ try:
     st.pyplot(plt)
 except Exception as e:
     st.error(f"No se pudo generar la gráfica de porcentaje de registros no nulos. Asegúrate de que el análisis de nulos se haya realizado correctamente. Error: {e}")
+
+
+#Ejercicio 3.E
+ruta_carpeta=os.path.join("processed_datasets")
+
+if not os.path.exists(ruta_carpeta):
+    st.warning("No se encontró la carpeta de datasets procesados. Por favor, asegúrate de que los datasets estén procesados y ubicados en la carpeta correcta.")
+    st.stop()
+
+cant=len(os.listdir(ruta_carpeta))
+
+informacion={
+    "Dataset": [],
+    "Cantidad de registros": [],
+    "Porcentaje de coordenadas válidas": [],
+    "Porcentaje de fechas válidas": [],
+    "Completitud promedio": []
+}
+
+st.subheader("Comparación entre datasets")
+if cant>1:
+    for archivo in os.listdir(ruta_carpeta):
+        if archivo.endswith(".csv"):
+            df_temp=pd.read_csv(os.path.join(ruta_carpeta, archivo))
+
+            if df_temp.empty:
+                st.warning(f"El dataset {archivo} está vacío. No se pueden calcular las métricas para este dataset.")
+                continue
+
+            cantidad=df_temp.shape[0]
+            coord_validas=du.cordenadas_validas(df_temp)
+            fechas_validas=du.fechas_validas(df_temp)
+            completitud=du.completo(df_temp)
+            informacion["Dataset"].append(archivo)
+            informacion["Cantidad de registros"].append(cantidad)
+            informacion["Porcentaje de coordenadas válidas"].append(coord_validas)
+            informacion["Porcentaje de fechas válidas"].append(fechas_validas)
+            informacion["Completitud promedio"].append(completitud)
+    
+    tabla=pd.DataFrame(informacion)
+    st.table(tabla)
+else:
+    st.warning("No hay suficientes datasets procesados para comparar. Por favor, procesa más datasets para ver la comparación.")
+
