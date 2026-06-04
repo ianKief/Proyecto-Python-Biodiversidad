@@ -4,7 +4,8 @@ import folium
 from streamlit_folium import st_folium
 from folium.plugins import MarkerCluster
 from src.validacion import verificar_rango
-from src.dataset_utils import obtener_columna_real
+from src.columnas import obtener_columna_real
+from src.multimedia_utils import obtener_media_inaturalist, obtener_media_xeno
 
 st.title("🗺️ Ficha de Datos")
 
@@ -69,11 +70,11 @@ paleta = [
     '#911eb4','#42d4f4','#f032e6','#bfef45','#fabebe',
     '#469990','#dcbeff','#9A6324','#fffac8','#800000',
     '#aaffc3','#808000','#ffd8b1','#000075','#a9a9a9'
-]
-color_map = {cat: paleta[i % len(paleta)] for i, cat in enumerate(categorias)}
+] # Paleta de colores para hasta 20 categorías distintas
+color_map = {cat: paleta[i % len(paleta)] for i, cat in enumerate(categorias)} # Asignar colores a cada categoría, reutilizando si hay más de 20
 
 # Crear mapa centrado en el promedio de coordenadas
-lat_centro = df_validos['_lat'].mean()
+lat_centro = df_validos['_lat'].mean() 
 lon_centro = df_validos['_lon'].mean()
 
 mapa = folium.Map(location=[lat_centro, lon_centro], zoom_start=4)
@@ -102,7 +103,7 @@ for _, row in df_validos.iterrows():
     
     folium.CircleMarker(
         location=[row['_lat'], row['_lon']],
-        radius=6,
+        radius=2,
         color=color,
         fill=True,
         fill_color=color,
@@ -126,7 +127,6 @@ if resultado_mapa and resultado_mapa.get('last_clicked'):
     )
     fila = df_validos.loc[df_validos['_dist'].idxmin()]
 
-    st.divider()
     st.markdown("### 📋 Ficha de la observación")
 
     # Columnas taxonómicas y de observación a mostrar
@@ -157,14 +157,25 @@ if resultado_mapa and resultado_mapa.get('last_clicked'):
     df_ficha = pd.DataFrame(ficha)
     st.dataframe(df_ficha, use_container_width=True, hide_index=True)
 
-# Mostrar leyenda de colores
-with st.expander("🎨 Ver leyenda de colores"):
-    cols = st.columns(3)
-    for i, (cat, color) in enumerate(list(color_map.items())[:10]): # Limitar a 10 categorías para no saturar la leyenda
-        cols[i % 3].markdown(
-            f"<span style='color:{color}'>●</span> {cat}",
-            unsafe_allow_html=True
-        )
+    st.markdown("### 📷 Multimedia")
+    dataset = st.session_state["dataset"]
+
+    if dataset == "inaturalist":
+        media = obtener_media_inaturalist(fila[col_id])
+        if media.empty:
+            st.info("No hay multimedia asociada a esta observación.")
+        else:
+            for _, item in media.iterrows():
+                st.image(item["identifier"])
+
+    elif dataset == "xeno-canto":
+        media = obtener_media_xeno(fila[col_id])
+        media = media[media["format"].str.startswith("audio", na=False)]
+        if media.empty:
+            st.info("No hay archivos de audio asociados a esta observación.")
+        else:
+            for _, item in media.iterrows():
+                st.audio(item["accessURI"])
 
 if st.button("← Volver a Búsqueda"):
     st.switch_page("pages/03_Búsqueda.py")
