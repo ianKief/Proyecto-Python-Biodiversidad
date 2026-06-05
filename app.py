@@ -14,9 +14,18 @@ if 'dataset_seleccionado' not in st.session_state:
     st.session_state['dataset_seleccionado'] = None
 
 def actualizar_seleccion():
-    st.session_state['dataset'] = st.session_state['dataset_seleccionado']
-    st.session_state['fecha_hora'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    st.session_state['archivo'] = st.session_state['dataset'] + "_procesado.csv"
+    # Guardamos temporalmente lo que haya en el selectbox
+    seleccion = st.session_state.get('dataset_seleccionado')
+    
+    if seleccion is not None:
+        st.session_state['dataset'] = seleccion
+        st.session_state['fecha_hora'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        st.session_state['archivo'] = f"{seleccion}_procesado.csv"
+    else:
+        # Si el selectbox volvio al placeholder (None), reseteamos los valores
+        st.session_state['dataset'] = None
+        st.session_state['fecha_hora'] = None
+        st.session_state['archivo'] = None
 
 # Configuracion de navegacion entre paginas
 pagina_inicio = st.Page("pages/01_Inicio.py", title="Inicio", icon="🏠", default=True)
