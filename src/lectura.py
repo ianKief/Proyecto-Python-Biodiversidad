@@ -36,8 +36,6 @@ def obtener_dataset(nombre_dataset, delimitador=",", usecols=None):
     if not ruta.exists():
         msj_error_archivo(f"{nombre_dataset}_procesado.csv")
         return None
-    if nombre_dataset == "iadiza":
-        delimitador = "\t"
     return pd.read_csv(ruta, sep=delimitador, usecols=usecols)
 
 def listar_columnas(dataset,archivo,delimitador=","):
@@ -78,6 +76,20 @@ def cant_registros(dataset,archivo,delimitador=","):
         return 0
     
     return len(pd.read_csv(ruta, sep=delimitador, usecols=[0])) # usecols=[0] para leer solo la primera columna
+
+def escribir_primeras_10_filas(dataset,archivo,delimitador=","):
+
+    """
+    Escribe un nuevo archivo con las primeras 10 filas del dataset.
+    Esta es una funcion auxiliar para generar datasets procesados a modo de prueba.
+    """
+
+    ruta_in, ruta_out = obtener_ruta(dataset,archivo)
+    if not ruta_in:
+        return None
+
+    df_primeras_10_filas = pd.read_csv(ruta_in, sep=delimitador, nrows=10) # nrows=10 para leer solo las primeras 10 filas del dataset
+    df_primeras_10_filas.to_csv(ruta_out, index=False) # index=False para no escribir el indice en el nuevo archivo
 
 def analisis_nulos(dataset, archivo, delimitador=","):
     """
