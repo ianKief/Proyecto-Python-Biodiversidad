@@ -10,6 +10,8 @@ if 'fecha_hora' not in st.session_state:
     st.session_state['fecha_hora'] = None
 if 'archivo' not in st.session_state:
     st.session_state['archivo'] = None
+if 'dataset_seleccionado' not in st.session_state:
+    st.session_state['dataset_seleccionado'] = None
 
 def actualizar_seleccion():
     st.session_state['dataset'] = st.session_state['dataset_seleccionado']
