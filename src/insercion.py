@@ -71,6 +71,12 @@ def validar_registro(registro):
             except ValueError:
                 errores.append("coordinateUncertaintyInMeters no numérico")
 
+    # Reutiliza logica de countryCode
+    if "countryCode" in registro and not no_existe_dato(registro["countryCode"]):
+        if pycountry.countries.get(alpha_2=country) is None:
+            errores.append("Codigo de pais no reconocido")
+
+
     return len(errores) == 0, errores
 
 def generar_id(dataset, archivo, delimitador):
