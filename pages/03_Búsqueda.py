@@ -21,6 +21,7 @@ if not dataset:
     st.stop()
 
 df = cargar_dataset_cache(dataset)
+print(f"Dataset cargado: {dataset}, filas: {len(df)}, columnas: {len(df.columns)}")  # Debug: Imprime información del dataset cargado
 
 if df.empty:
     st.error("No se pudo cargar el dataset o el mismo esta vacío. Por favor, verifica tu selección.")
@@ -72,18 +73,24 @@ with col1:
         sel_cientifico = st.multiselect("Seleccionar Nombre científico:", valores_unicos(col_nombre_cientifico))
         if sel_cientifico:
             filtros_activos[col_nombre_cientifico] = sel_cientifico
+    else:
+        st.info("La columna 'Nombre científico' no está disponible para buscar en este dataset.")
 
 with col2:
     if col_observador in df.columns:
         sel_observador = st.text_input("Seleccionar Observador:", placeholder="Escribe el observador...")
         if sel_observador:
             filtros_activos[col_observador] = sel_observador
+    else:
+        st.info("La columna 'Observador' no está disponible para buscar en este dataset.")
 
 with col3:
     if col_pais:
         sel_pais = st.multiselect("Seleccionar País:", valores_unicos(col_pais))
         if sel_pais:
             filtros_activos[col_pais] = sel_pais
+    else:
+        st.info("La columna 'País' no está disponible para buscar en este dataset.")
 
 with col4:
     if col_provincia in df.columns:
@@ -92,6 +99,8 @@ with col4:
         sel_provincia = st.multiselect("Seleccionar Provincia o Estado:", opciones_prov)
         if sel_provincia:
             filtros_activos[col_provincia] = sel_provincia
+    else:
+        st.info("La columna 'Provincia' no está disponible para buscar en este dataset.")
 
 # Buscar por rango de fechas
 if col_fecha_observacion in df.columns:
@@ -106,7 +115,7 @@ if col_fecha_observacion in df.columns:
     else:
         st.info("El dataset no contiene fechas válidas para filtrar.")
 else:
-    st.info("La columna de fecha no está disponible en este dataset.")
+    st.info("La columna 'Fecha de observación' no está disponible para buscar en este dataset.")
 
 # Se aplican los filtros
 filtro_libre = (col_busqueda, valor_busqueda) if valor_busqueda else None
