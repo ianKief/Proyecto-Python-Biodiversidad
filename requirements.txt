@@ -4,3 +4,5 @@ pycountry==26.2.16
 python-dateutil==2.9.0
 pandas==3.0.2
 matplotlib==3.10.9
+folium==0.20.0
+streamlit-folium==0.27.2
