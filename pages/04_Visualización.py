@@ -53,6 +53,10 @@ try:
             indices=total.index.map(lambda x: pc.countries.get(alpha_2=x).name if pc.countries.get(alpha_2=x) else None)
             total = total[indices.notna()]
             total.index = indices[indices.notna()]
+        elif campo=="country":
+            indices=total.index.map(lambda x: pc.countries.get(name=x).name if pc.countries.get(name=x) else None)
+            total = total[indices.notna()]
+            total.index = indices[indices.notna()]
 
         cantidad=st.slider("Cantidad de datos a mostrar", min_value=1, max_value=total.shape[0], value=3)
         datos=total.head(cantidad)
