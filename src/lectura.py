@@ -4,7 +4,6 @@ Módulo de lectura de datasets
 Este modulo se encarga de la lectura y procesamiento basico de la informacion de cada dataset
 """
 from pathlib import Path
-#import csv
 import os
 import pandas as pd
 
@@ -37,6 +36,8 @@ def obtener_dataset(nombre_dataset, delimitador=",", usecols=None):
     if not ruta.exists():
         msj_error_archivo(f"{nombre_dataset}_procesado.csv")
         return None
+    if nombre_dataset == "iadiza":
+        delimitador = "\t"
     return pd.read_csv(ruta, sep=delimitador, usecols=usecols)
 
 def listar_columnas(dataset,archivo,delimitador=","):
