@@ -1,7 +1,8 @@
 import csv
-import logger
-from lectura import obtener_ruta
-import validacion
+from . import logger
+from .lectura import obtener_ruta
+from . import validacion
+from dateutil import parser
 
 def identificador(dataset,archivo,valorID,delimitador=","):
 
@@ -96,21 +97,35 @@ def condicion(dataset,archivo,columnas,valor,condicion,delimitador=","):
         if not(condicion in condiciones):
             return (f" la condicion {condicion} no es valida")
         
-        for columna in columnas:
-            if not(columna in datos.fieldnames):
-                print(f"El campo {columna} no existe")
-                continue
-            
-            for fila in datos:
+        for fila in datos:
+            eliminar=False
+
+            for columna in columnas:
+
                 dato=fila.get(columna)
-                if(dato is None or dato.strip()==" "):
+
+                if(dato is None or dato.strip()==''):
                     continue
                 
-                dato=float(dato)
-                if (condiciones[condicion](dato,valor)):
-                    cant+=1
-                elif not(fila in registros):
-                    registros.append(fila)
+                try:
+                    dato_C=float(dato)
+                    valor_C=float(valor)
+                except ValueError:
+                    try:
+                        dato_C=parser.parser(dato)
+                        valor_C=parser.parser(valor)
+                    except ValueError:
+                            dato_C = dato
+                            valor_C = valor
+                    
+                if condiciones[condicion](dato_C,valor_C):
+                    eliminar=True
+                    break
+            
+            if eliminar:
+                cant+=1
+            else:
+                registros.append(fila)
         
     if(cant==0):
         return "Ningun registro cumplia la condicion"
