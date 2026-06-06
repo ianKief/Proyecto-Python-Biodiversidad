@@ -179,3 +179,52 @@ try:
 
 except Exception as e:
     st.error(f"Ocurrió un error al buscar el registro: {e}")
+
+#Ejercicio 4.C
+st.subheader("Actualizar registro encontrado")
+st.write("Una vez relizada la busqueda del registro aca podra modificar los campos deseados")
+
+if "registro_encontrado" in st.session_state:
+    original=dict(st.session_state["registro_encontrado"].iloc[0])
+    editado=st.data_editor(st.session_state["registro_encontrado"],key="editor")
+
+
+if st.button("Validar registro encontrado y modificarlo"):
+    editado_dict=dict(editado.iloc[0])
+    cambios={}
+    juntos={"campos":[],
+                "original":[],
+                "editado":[]
+                }
+
+    if not editado_dict:
+        st.warning("Primero busque el registro a modificar")
+    else:
+        for campo in original:
+            if pd.isna(editado_dict[campo]):
+                editado_dict[campo]=original[campo]
+                juntos["campos"].append(campo)
+                juntos["original"].append(original[campo])
+                juntos["editado"]. append(original[campo])
+                continue
+
+            if editado_dict[campo]!=original[campo]:
+                cambios[campo]=editado_dict[campo]
+
+            juntos["campos"].append(campo)
+            juntos["original"].append(original[campo])
+            juntos["editado"]. append(editado_dict[campo])
+            
+        columna_ID=ejemplo_id[st.session_state['archivo']][1]
+        st.write(cambios)
+        if not cambios:
+            st.write("No hubieron modificaciones")
+        else:
+            try:
+                st.write(original[columna_ID])
+                actualizar=(actualizar_multiples_campos(st.session_state['dataset'],st.session_state['archivo'],columna_ID,original[columna_ID],cambios))
+                if actualizar == "Columnas actualizadas exitosamente":
+                    tabla=pd.DataFrame(juntos)
+                    st.table(tabla)
+            except Exception as e:
+                st.error(f"Hubo un error a la hora de actualizar el registro, {e}")
