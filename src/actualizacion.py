@@ -1,7 +1,7 @@
-from lectura import obtener_ruta
+from .lectura import obtener_ruta
 import csv
-import validacion
-import logger
+from . import validacion
+from . import logger
 
 """
 Este modulo se encarga de la modificación de registros existentes dentro de un dataset
