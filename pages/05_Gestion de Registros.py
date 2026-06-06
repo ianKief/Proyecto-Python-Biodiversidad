@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
+import csv
+from dateutil import parser
+from src.insercion import validar_registro
+import pycountry
+from babel import Locale
+from src.actualizacion import actualizar_multiples_campos
+import src.eliminacion as eli
+
+from src.validacion import no_existe_dato
 
 
 st.set_page_config(
@@ -228,3 +237,114 @@ if st.button("Validar registro encontrado y modificarlo"):
                     st.table(tabla)
             except Exception as e:
                 st.error(f"Hubo un error a la hora de actualizar el registro, {e}")
+
+#Ejercicio 4.D
+st.subheader("Eliminar un registro")
+st.write("A continuacion podra elegir la forma en la que desea eliminar un registro del dataset")
+opcion_eliminar=st.radio(label="Seleccione el método de eliminación",
+                         options=["Por ID","Por valor en una columna","Por una condicion específica"])
+if opcion_eliminar == "Por ID":
+    dato=st.text_input(f"Ingrese el ID que desea buscar para eliminar (ejemplo: {ejemplo_id.get(st.session_state['archivo'])[0]}",key="registro_a_eliminar")
+    if st.button("Buscar registros a eliminar"):
+        if dato:
+
+            id_columna = ejemplo_id[st.session_state['archivo']][1]
+
+            #Reutilizo logica de eliminacion por ID pero usando pandas
+            afectados = df[
+                df[id_columna].astype(str) == dato
+            ]
+
+            if afectados.empty:
+                st.warning("No se encontraron registros")
+            else:
+                st.session_state["valorID"] = dato
+                st.session_state["afectados"] = afectados
+
+                st.write(
+                    f"Se eliminarán {len(afectados)} registros"
+                )
+
+                st.dataframe(afectados)
+
+            if "afectados" in st.session_state:
+                confirmar=st.checkbox("Confirmo la eliminacion")
+
+                if confirmar:
+                    resultado = eli.identificador(
+                    st.session_state['dataset'],
+                    st.session_state['archivo'],
+                    st.session_state["valorID"]
+                )
+
+                st.success(resultado)
+        else:
+            st.warning("Ingrese un ID para buscar")
+
+elif opcion_eliminar == "Por valor en una columna":
+    col=st.selectbox("Selecciona la columna a verificar",df.columns)
+    valores=st.text_area("Ingresa los valores que quiera eliminar (uno por linea):")
+    valores=valores.splitlines()
+
+    if st.checkbox("Eliminar"):
+        if not valores:
+            st.warning("Ingrese valores para comenzar")
+        else:
+            #Reutilizo la logica del eliminar por columna
+            afectados = df[df[col].astype(str).isin(valores)]
+            st.write(f"Seliminaran {len(afectados)} registros")
+            st.session_state["afectados"] = afectados
+            st.dataframe(afectados)
+
+            if "afectados" in st.session_state:
+                if st.button("Eliminar"):
+                    resultado=eli.eliminar_columna(
+                        st.session_state['dataset'],
+                        st.session_state['archivo'],
+                        col,
+                        valores
+                        )
+                    
+                    st.succes(resultado)
+else:
+    condiciones={
+        "==":lambda a, b: a == b,
+        "!=":lambda a, b: a!=b,
+        ">":lambda a, b: a > b,
+        ">=":lambda a, b: a >= b,
+        "<":lambda a, b: a < b,
+        "<=":lambda a, b: a <= b
+    }
+
+    cond=st.selectbox("Seleccione la condicion",condiciones.keys())
+    col=st.multiselect("Seleccione las columnas a revisar",df.columns)
+    valor=st.text_input("Escriba el dato con el que comparar")
+    if not col:
+        st.warning("Seleecione una columna")
+    else:
+        if st.button("Buscar"):
+            mask = pd.Series(False, index=df.index)
+
+            #Reutilizo logica de eliminacion por condicion
+            for columna in col:
+                try:
+                    serie = pd.to_numeric(df[columna])
+                    valor_cmp = float(valor)
+                except ValueError:
+                    try:
+                        serie=parser.parser(df[columna])
+                        valor_cmp=parser.parser(valor)
+                    except ValueError:
+                            serie = df[columna].astype(str)
+                            valor_cmp = str(valor)
+
+                mask |= condiciones[cond](serie, valor_cmp)
+
+            afectados=df[mask]
+            st.session_state["afectados"] = afectados
+            st.write(f"Se eliminaran {len(afectados)}")
+            st.write(afectados)
+
+            if "afectados" in st.session_state:
+                resultado=eli.condicion(st.session_state['dataset'],st.session_state['archivo'],col,valor,cond)
+                st.succes(resultado)
