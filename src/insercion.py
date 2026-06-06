@@ -1,5 +1,5 @@
-from lectura import listar_columnas, obtener_ruta
-from validacion import verificar_rango
+from .lectura import listar_columnas, obtener_ruta
+from .validacion import verificar_rango
 import csv
 
 
