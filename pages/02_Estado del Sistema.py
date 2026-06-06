@@ -1,6 +1,7 @@
 import streamlit as st
 import csv
 import os
+from datetime import datetime
 
 st.set_page_config(
     page_title="Estado del Sistema",
@@ -38,12 +39,18 @@ if os.path.exists(log_path):
                         fecha=datetime.strptime(partes[0].split(" ")[0], "%Y-%m-%d") # Extraigo solo la parte de la fecha
                         if not (fecha_min <= fecha.date() <= fecha_max):
                             continue
+                    
+                    # Si la linea tiene 4 partes (no se genero un error), agrego un estado "OK" por defecto
+                    if len(partes) < 5:
+                        partes.append("OK")  # Si no hay estado, asumo "OK"
+                    
                     # logs tendra una lista de diccionarios con las partes del log
                     logs.append({
                         "Fecha": partes[0],
                         "Dataset": partes[1],
                         "Operation": partes[2],
                         "Registros": partes[3],
+                        "Estado": partes[4]
                     })
         if logs:
             st.dataframe(logs, use_container_width=True, hide_index=True)
