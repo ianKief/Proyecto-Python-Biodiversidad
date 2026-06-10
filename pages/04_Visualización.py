@@ -3,9 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import pycountry as pc
-import columnas
+from src import columnas
 from src.lectura import analisis_nulos
-import dataset_utils as du
+from src import dataset_utils as du
 
 
 st.set_page_config(
@@ -189,7 +189,7 @@ if cant>1:
             cantidad=df_temp.shape[0]
             coord_validas=du.cordenadas_validas(df_temp)
             fechas_validas=du.fechas_validas(df_temp)
-            completitud=du.completo(df_temp)
+            completitud=du.completitud_promedio(df_temp)
             informacion["Dataset"].append(archivo)
             informacion["Cantidad de registros"].append(cantidad)
             informacion["Porcentaje de coordenadas válidas"].append(coord_validas)
