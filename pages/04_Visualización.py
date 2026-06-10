@@ -3,7 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import pycountry as pc
+import columnas
 from src.lectura import analisis_nulos
+import dataset_utils as du
 
 
 st.set_page_config(
