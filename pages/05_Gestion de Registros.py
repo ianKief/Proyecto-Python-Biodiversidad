@@ -257,29 +257,37 @@ if opcion_eliminar == "Por ID":
 
             if afectados.empty:
                 st.warning("No se encontraron registros")
+                # Limpio las variables de sesión por si se hizo una busqueda previa
+                if "afectados" in st.session_state:
+                    del st.session_state["afectados"]
+                if "valorID" in st.session_state:
+                    del st.session_state["valorID"]
             else:
                 st.session_state["valorID"] = dato
                 st.session_state["afectados"] = afectados
 
-                st.write(
+                
+        else:
+            st.warning("Ingrese un ID para buscar")
+
+        if "afectados" in st.session_state:
+            afectados = st.session_state["afectados"]
+            st.write(
                     f"Se eliminarán {len(afectados)} registros"
                 )
+            st.dataframe(afectados)
 
-                st.dataframe(afectados)
-
-            if "afectados" in st.session_state:
-                confirmar=st.checkbox("Confirmo la eliminacion")
-
-                if confirmar:
-                    resultado = eli.identificador(
+            if st.button("Confirmar eliminación"):
+                resultado = eli.identificador(
                     st.session_state['dataset'],
                     st.session_state['archivo'],
                     st.session_state["valorID"]
                 )
 
                 st.success(resultado)
-        else:
-            st.warning("Ingrese un ID para buscar")
+                del st.session_state["afectados"]
+                del st.session_state["valorID"]
+        
 
 elif opcion_eliminar == "Por valor en una columna":
     col=st.selectbox("Selecciona la columna a verificar",df.columns)
@@ -305,7 +313,7 @@ elif opcion_eliminar == "Por valor en una columna":
                         valores
                         )
                     
-                    st.succes(resultado)
+                    st.success(resultado)
 else:
     condiciones={
         "==":lambda a, b: a == b,
@@ -347,4 +355,4 @@ else:
 
             if "afectados" in st.session_state:
                 resultado=eli.condicion(st.session_state['dataset'],st.session_state['archivo'],col,valor,cond)
-                st.succes(resultado)
+                st.success(resultado)
