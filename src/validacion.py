@@ -27,7 +27,7 @@ def verificar_rango(dato,max,min):
 
     """Verifica si el dato del campo esta vacio o no y lo verifica si tiene un valor"""
 
-    if(dato is None:
+    if dato is None:
         return True
     elif isinstance(dato, str) and dato.strip() == "":
         return True
@@ -79,7 +79,7 @@ def no_existe_dato(dato):
 
     """Funcion que verifica si el campo esta vacio o no"""
 
-    if(dato is None:
+    if dato is None:
         return True
     elif isinstance(dato, str) and dato.strip() == "":
         return True
