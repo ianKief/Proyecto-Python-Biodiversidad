@@ -145,7 +145,7 @@ if st.button("Validar datos e insertar"):
             if not no_existe_dato(nuevo[campo]):
                 if not isinstance(nuevo[campo], str):
                     errores.append(f"El campo {campo} debe ser una cadena de texto")
-                
+                else:
                     if any(caracter.isdigit() for caracter in nuevo[campo]):
                         errores.append(f"El campo {campo} no puede contener números")
 
