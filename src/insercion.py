@@ -29,7 +29,8 @@ def validar_registro(registro):
     columnas = registro.keys()
 
     paises_sudamerica = {"AR", "BO", "BR", "CL", "CO", "EC", "GY", "PY", "PE", "SR", "UY", "VE"}
-    country = registro.get("countryCode", "") or ""
+    country_raw = registro.get("countryCode", "")
+    country = str(country_raw).strip() if country_raw is not None else ""
 
     latitud = [col for col in columnas if "latitude" in col.lower()]
     longitud = [col for col in columnas if "longitude" in col.lower()]
@@ -37,19 +38,22 @@ def validar_registro(registro):
     campo_lat = latitud[0] if latitud else None
     campo_lon = longitud[0] if longitud else None
 
-    valor_lat = registro.get(campo_lat, "") if campo_lat else ""
-    valor_lon = registro.get(campo_lon, "") if campo_lon else ""
+    valor_lat_raw = registro.get(campo_lat, "") if campo_lat else ""
+    valor_lon_raw = registro.get(campo_lon, "") if campo_lon else ""
+
+    valor_lat = str(valor_lat_raw).strip() if valor_lat_raw is not None else ""
+    valor_lon = str(valor_lon_raw).strip() if valor_lon_raw is not None else ""
 
     # Reutiliza verificar_rango
     if campo_lat and verificar_rango(valor_lat, 90, -90):
-        errores.append("Latitud inválida")
+        errores.append("Latitud inválida. Debe estar entre -90 y 90 y tener formato DD (Ej: 41.17583)")
     if campo_lon and verificar_rango(valor_lon, 180, -180):
-        errores.append("Longitud inválida")
+        errores.append("Longitud inválida. Debe estar entre -180 y 180 y tener formato DD (Ej: 41.17583)")
 
     # Reutiliza lógica existe
-    if valor_lat.strip() != "" and valor_lon.strip() == "":
+    if valor_lat != "" and valor_lon == "":
         errores.append("Existe latitud pero falta longitud")
-    if valor_lon.strip() != "" and valor_lat.strip() == "":
+    if valor_lon != "" and valor_lat == "":
         errores.append("Existe longitud pero falta latitud")
 
     # Reutiliza lógica max_min para Sudamérica
@@ -62,7 +66,7 @@ def validar_registro(registro):
     # Reutiliza logica incertidumbre
     if "coordinateUncertaintyInMeters" in registro:
         incertidumbre = registro["coordinateUncertaintyInMeters"]
-        if incertidumbre is not None and incertidumbre.strip() != "":
+        if incertidumbre is not None and str(incertidumbre).strip() != "":
             try:
                 valor = float(incertidumbre)
                 if valor < 0:
