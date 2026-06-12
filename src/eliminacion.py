@@ -1,4 +1,5 @@
 import csv
+import os
 from . import logger
 from .lectura import obtener_ruta
 from . import validacion
@@ -44,32 +45,45 @@ def eliminar_columna(dataset,archivo,columna,valores,delimitador=","):
     """Funcion que recibe la columna a actualizar y en valores esta una lista con los valores que hay que eliminar de esa columna"""
 
     rute_in,rute_out=obtener_ruta(dataset,archivo)
-    with open(rute_in, "r",encoding="utf-8"):
-        cant=0
-        datos=csv.DictReader(archivo,delimiter=delimitador)
-        registros=[]
-        campos=datos.fieldnames
-        if not (columna in datos.fieldnames):
-            logger.log_error(dataset,"DELETE")
-            return(f"La columna: {columna} no existe")
-        else:
+    cant=0
+    # Creamos un archivo temporal para escribir los registros que no se eliminaran, y luego reemplazamos el original con el temporal
+    ruta_tmp = str(rute_out) + '.tmp'
+
+    try:
+        with open(rute_in, "r",encoding="utf-8") as archivo_in, \
+            open(ruta_tmp, "w", encoding="utf-8", newline='') as archivo_out:
+            datos=csv.DictReader(archivo_in, delimiter=delimitador)
+            campos=datos.fieldnames
+            
+            if not (columna in campos):
+                logger.log_error(dataset,"DELETE")
+                return(f"La columna: {columna} no existe")
+            
+            writer=csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
+            writer.writeheader()
+            
             for fila in datos:
-                if (fila[columna] in valores):
+                if str(fila[columna]) in valores:
                     cant+=1
                 else:
-                    registros.append(fila[columna])
-    if cant==0:
-        return (f"No habia registros con los valores:{valores}")
+                    writer.writerow(fila)
+        
+        if cant==0:
+            if os.path.exists(ruta_tmp):
+                os.remove(ruta_tmp)
+            logger.log_error(dataset,"DELETE")
+            return (f"No habia registros con los valores:{valores}")
+        
+        #Si se elimino algun registro se guarda el archivo actualizado con los registros eliminados
+        os.replace(ruta_tmp, rute_out)
+        logger.log(dataset,"DELETE",cant)
+        return "Se eliminaron los registros requeridos"
     
-    #Si se elimino algun registro se guarda el archivo actualizado con los registros eliminados
-    with open(rute_out,"w",encoding="utf-8") as actualizado:
-        writer=csv.DictWriter(actualizado,fieldnames=campos,delimiter=",")
-        writer.writeheader()
-        writer.writerows(registros)
-
-    logger.log(dataset,"DELETE",cant)
-
-    return "Se eliminaron los registros requeridos"
+    except Exception as e:
+        if os.path.exists(ruta_tmp):
+            os.remove(ruta_tmp)
+        logger.log_error(dataset,"DELETE")
+        return f"Hubo un error: {e}"
 
 
 def condicion(dataset,archivo,columnas,valor,condicion,delimitador=","):
@@ -78,66 +92,71 @@ def condicion(dataset,archivo,columnas,valor,condicion,delimitador=","):
        y elimina los registros que cumplan la condicion"""
 
     rute_in,rute_out=obtener_ruta(dataset,archivo)
-    cant=0
-    registros=[]
 
     condiciones={
-        "==":lambda a, b: a == b,
-        "!=":lambda a, b: a!=b,
-        ">":lambda a, b: a > b,
-        ">=":lambda a, b: a >= b,
-        "<":lambda a, b: a < b,
-        "<=":lambda a, b: a <= b
+        "Igual":lambda a, b: a == b,
+        "Diferente":lambda a, b: a!=b,
+        "Mayor":lambda a, b: a > b,
+        "Mayor o igual":lambda a, b: a >= b,
+        "Menor":lambda a, b: a < b,
+        "Menor o igual":lambda a, b: a <= b
     }
 
-    with open(rute_in,"r",encoding="utf-8") as archivo_in:
-        datos=csv.DictReader(archivo_in,delimiter=delimitador)
-        campos=datos.fieldnames
-
-        if not(condicion in condiciones):
+    if not(condicion in condiciones):
             return (f" la condicion {condicion} no es valida")
-        
-        for fila in datos:
-            eliminar=False
-
-            for columna in columnas:
-
-                dato=fila.get(columna)
-
-                if(dato is None or dato.strip()==''):
-                    continue
-                
-                try:
-                    dato_C=float(dato)
-                    valor_C=float(valor)
-                except ValueError:
-                    try:
-                        dato_C=parser.parser(dato)
-                        valor_C=parser.parser(valor)
-                    except ValueError:
-                            dato_C = dato
-                            valor_C = valor
-                    
-                if condiciones[condicion](dato_C,valor_C):
-                    eliminar=True
-                    break
-            
-            if eliminar:
-                cant+=1
-            else:
-                registros.append(fila)
-        
-    if(cant==0):
-        return "Ningun registro cumplia la condicion"
     
-    with open(rute_out,"w",encoding="utf-8") as actualizado:
-        writer=csv.DictWriter(actualizado,fieldnames=campos,delimiter=",")
-        writer.writeheader()
-        writer.writerows(registros)
+    cant = 0
+    ruta_tmp = str(rute_out) + '.tmp'
 
-    logger.log(dataset,"DELETE",cant)
+    try:
+        with open(rute_in,"r",encoding="utf-8") as archivo_in, \
+            open(ruta_tmp,"w",encoding="utf-8", newline='') as archivo_out:
+            datos=csv.DictReader(archivo_in,delimiter=delimitador)
+            campos=datos.fieldnames
 
-    return "Se eliminaron los registros que cumplian la condicion"
+            writer=csv.DictWriter(archivo_out,fieldnames=campos,delimiter=",")
+            writer.writeheader()
+
+            for fila in datos:
+                eliminar=False
+
+                for columna in columnas:
+                    dato=fila.get(columna)
+
+                    if(dato is None or str(dato).strip()==''):
+                        continue
+                    
+                    try:
+                        dato_C=float(dato)
+                        valor_C=float(valor)
+                    except ValueError:
+                        try:
+                            dato_C=parser.parse(str(dato))
+                            valor_C=parser.parse(str(valor))
+                        except ValueError:
+                                dato_C = str(dato).strip()
+                                valor_C = str(valor).strip()
+                        
+                    if condiciones[condicion](dato_C,valor_C):
+                        eliminar=True
+                        break
+                
+                if eliminar:
+                    cant+=1
+                else:
+                    writer.writerow(fila)
+            
+        if(cant==0):
+            return "Ningun registro cumplia la condicion"
+        os.replace(ruta_tmp, rute_out)
+        logger.log(dataset,"DELETE",cant)
+        return "Se eliminaron los registros que cumplian la condicion"
+    
+    except Exception as e:
+        if os.path.exists(ruta_tmp):
+            os.remove(ruta_tmp)
+        logger.log_error(dataset,"DELETE")
+        return f"Hubo un error: {e}"
 
 def sanitizar(dataset,archivo,delimitador=","):
     """
