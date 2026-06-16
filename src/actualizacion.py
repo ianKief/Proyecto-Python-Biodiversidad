@@ -1,5 +1,9 @@
-from .lectura import obtener_ruta
 import csv
+import os
+import pycountry
+from datetime import datetime
+from dateutil import parser
+from .lectura import obtener_ruta
 from . import validacion
 from . import logger
 
@@ -38,62 +42,78 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
         return "No se encontro el archivo ingresado"
 
     actualizado = False
-    registros_actualizados = []
+    ruta_tmp = str(ruta_out) + '.tmp'
 
     # Primero se lee el archivo original en busqueda del registro que se quiere modificar, verificando que existan el registro y la columna a modificar
-    with open(ruta_in, 'r', encoding='utf-8') as archivo_in:
-        lector = csv.DictReader(archivo_in, delimiter=delimitador)
-        campos = lector.fieldnames
-        if not id in campos:
-                return "La columna de identificación no existe"
-        if not columna in campos:
-                return "La columna a actualizar no existe"
-        for fila in lector:
-            if fila[id] == valorID:
-                fila_mod = fila.copy()
-                fila_mod[columna] = valor
-                errores = []
-                col = columna.lower()
-                if "latitude" in col:
-                    try:
-                        if validacion.verificar_rango(fila_mod[columna],90,-90):
-                            errores.append(f"Latitud {fila_mod[columna]} fuera de rango")
-                    except ValueError:
-                        errores.append("Latitud debe ser numerica")
-                elif "longitude" in col:
-                    try:
-                        if validacion.verificar_rango(fila_mod[columna],180,-180):
-                            errores.append(f"Longitud {fila_mod[columna]} fuera de rango")
-                    except ValueError:
-                        errores.append("Longitud debe ser numerica")
-                
-                # Crea una lista con todas las columnas que contienen latitud o longitud en su nombre
-                # Toma la primera coincidencia que encuentra o devuelve None si no encuentra ninguna
-                lat = next((c for c in campos if "latitude" in c.lower()), None)
-                lon = next((c for c in campos if "longitude" in c.lower()), None)
-                if lat and lon:
-                    # Verifica que las se ingresen datos en ambas columnas
-                    tiene_lat = bool(fila_mod[lat] and fila_mod[lat].strip()) # La primera condicion es para evitar errores si el valor es None
-                    tiene_lon = bool(fila_mod[lon] and fila_mod[lon].strip())
-                    if tiene_lat != tiene_lon:
-                        errores.append("Error: Los cambios dejan una coordenada vacia y otra con valor")
-                if errores:
-                    return f"Errores encontrados: {', '.join(errores)}"
-                
-                fila = fila_mod
-                actualizado = True
-            registros_actualizados.append(fila)
-    if not actualizado:
-        logger.log_error(dataset,"UPDATE")
-        return "No se encontro el registro con el id ingresado"
     
-    # Si se encontro el registro, se escribe el nuevo archivo procesado con la modificacion realizada
-    with open(ruta_out, 'w', encoding='utf-8', newline='') as archivo_out:
-        escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
-        escritor.writeheader()
-        escritor.writerows(registros_actualizados)
-    logger.log(dataset,"UPDATE",1)
-    return "Columna actualizada exitosamente"
+    try:
+        with open(ruta_in, 'r', encoding='utf-8') as archivo_in, \
+             open(ruta_tmp, 'w', encoding='utf-8', newline='') as archivo_out:
+        
+            lector = csv.DictReader(archivo_in, delimiter=delimitador)
+            campos = lector.fieldnames
+        
+            if not id in campos:
+                return "La columna de identificación no existe"
+            if not columna in campos:
+                return "La columna a actualizar no existe"
+            
+            escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
+            escritor.writeheader()
+
+            for fila in lector:
+                if str(fila[id]) == str(valorID):
+                    fila_mod = fila.copy()
+                    fila_mod[columna] = valor
+                    errores = []
+                    col = columna.lower()
+                    if "latitude" in col:
+                        try:
+                            if validacion.verificar_rango(fila_mod[columna],90,-90):
+                                errores.append(f"Latitud {fila_mod[columna]} fuera de rango")
+                        except ValueError:
+                            errores.append("Latitud debe ser numerica")
+                    elif "longitude" in col:
+                        try:
+                            if validacion.verificar_rango(fila_mod[columna],180,-180):
+                                errores.append(f"Longitud {fila_mod[columna]} fuera de rango")
+                        except ValueError:
+                            errores.append("Longitud debe ser numerica")
+                    
+                    # Crea una lista con todas las columnas que contienen latitud o longitud en su nombre
+                    # Toma la primera coincidencia que encuentra o devuelve None si no encuentra ninguna
+                    lat = next((c for c in campos if "latitude" in c.lower()), None)
+                    lon = next((c for c in campos if "longitude" in c.lower()), None)
+                    if lat and lon:
+                        # Verifica que las se ingresen datos en ambas columnas
+                        tiene_lat = bool(fila_mod[lat] and str(fila_mod[lat].strip())) # La primera condicion es para evitar errores si el valor es None
+                        tiene_lon = bool(fila_mod[lon] and str(fila_mod[lon].strip()))
+                        if tiene_lat != tiene_lon:
+                            errores.append("Error: Los cambios dejan una coordenada vacia y otra con valor")
+                    
+                    if errores:
+                        raise ValueError(f"Errores encontrados: {', '.join(errores)}")
+                    
+                    fila = fila_mod
+                    actualizado = True
+                
+                escritor.writerow(fila)
+        
+        if not actualizado:
+            if os.path.exists(ruta_tmp):
+                os.remove(ruta_tmp)
+                logger.log_error(dataset,"UPDATE")
+                return "No se encontro el registro con el id ingresado"
+        
+        # Si todo sale bien, el archivo temporal con las modificaciones reemplaza al original
+        os.replace(ruta_tmp, ruta_out)
+        logger.log(dataset, "UPDATE", 1)
+        return "Columna actualizada exitosamente"
+
+    except Exception as e:
+        if os.path.exists(ruta_tmp):
+            os.remove(ruta_tmp)
+        return f"Error: {str(e)}"
 
 def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimitador=","):
 
@@ -107,60 +127,81 @@ def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimi
         return "No se encontro el archivo ingresado"
 
     actualizado = False
-    registros_actualizados = []
+    ruta_tmp = str(ruta_out) + '.tmp'
+
+    taxonomia = ["family", "kingdom", "genus", "phylum", "scientificname", "higherClassification","order","class"]
 
     # Primero se lee el archivo original en busqueda del registro que se quiere modificar, verificando que existan el registro y la columna a modificar
-    with open(ruta_in, 'r', encoding='utf-8') as archivo_in:
-        lector = csv.DictReader(archivo_in, delimiter=delimitador)
-        campos = lector.fieldnames
-        if not id in campos:
-            return "La columna de identificación no existe"
-            
-        for col in nuevos_valores.keys():
-            if col not in campos:
-                return f"La columna {col} no existe en el dataset" 
+    try:
+        with open(ruta_in, 'r', encoding='utf-8') as archivo_in, \
+             open(ruta_tmp, 'w', encoding='utf-8', newline='') as archivo_out:
+            lector = csv.DictReader(archivo_in, delimiter=delimitador)
+            campos = lector.fieldnames
         
-        for fila in lector:
-            if fila[id] == valorID:
-                # Iteramos sobre el diccionario para actualizar cada campo
-                fila_mod = fila.copy()
-                for col, val in nuevos_valores.items():
-                    fila_mod[col] = val
-                errores = []
-                for col_mod, val in nuevos_valores.items():
-                    col = col_mod.lower()
-                    if "latitude" in col:
-                        try:
-                            if validacion.verificar_rango(fila_mod[col_mod],90,-90):
-                                errores.append(f"Latitud {fila_mod[col_mod]} fuera de rango")
-                        except ValueError:
-                            errores.append("Latitud debe ser numerica")
-                    elif "longitude" in col:
-                        try:
-                            if validacion.verificar_rango(fila_mod[col_mod],180,-180):
-                                errores.append(f"Longitud {fila_mod[col_mod]} fuera de rango")
-                        except ValueError:
-                            errores.append("Longitud debe ser numerica")
-                lat = next((c for c in campos if "latitude" in c.lower()), None)
-                lon = next((c for c in campos if "longitude" in c.lower()), None)
-                if lat and lon:
-                    tiene_lat = bool(fila_mod[lat] and fila_mod[lat].strip()) # La primera condicion es para evitar errores si el valor es None
-                    tiene_lon = bool(fila_mod[lon] and fila_mod[lon].strip())
-                    if tiene_lat != tiene_lon:
-                        errores.append("Error: Los cambios dejan una coordenada vacia y otra con valor")
-                if errores:
-                    return f"Errores encontrados: {', '.join(errores)}"
-                fila = fila_mod
-                actualizado = True
-            registros_actualizados.append(fila)
-    if not actualizado:
-        logger.log_error(dataset,"UPDATE")
-        return f"No se encontro el registro con el id {id}"
+            if not id in campos:
+                return "La columna de identificación no existe"
+            
+            for col in nuevos_valores.keys():
+                if col not in campos:
+                    return f"La columna {col} no existe en el dataset" 
+
+            escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
+            escritor.writeheader()
+
+            for fila in lector:
+                if str(fila[id]) == str(valorID):
+                    # Iteramos sobre el diccionario para actualizar cada campo
+                    fila_mod = fila.copy()
+                    
+                    for col, val in nuevos_valores.items():
+                        fila_mod[col] = val
+                    errores = []
+                    
+                    for col_mod, val in nuevos_valores.items():
+                        col = col_mod.lower()
+                        val_str = str(val).strip() if val is not None else ""
+                        
+                        if "latitude" in col:
+                            try:
+                                if validacion.verificar_rango(fila_mod[col_mod],90,-90):
+                                    errores.append(f"Latitud {fila_mod[col_mod]} fuera de rango")
+                            except ValueError:
+                                errores.append("Latitud debe ser numerica")
+                        elif "longitude" in col:
+                            try:
+                                if validacion.verificar_rango(fila_mod[col_mod],180,-180):
+                                    errores.append(f"Longitud {fila_mod[col_mod]} fuera de rango")
+                            except ValueError:
+                                errores.append("Longitud debe ser numerica")
+                    
+                    lat = next((c for c in campos if "latitude" in c.lower()), None)
+                    lon = next((c for c in campos if "longitude" in c.lower()), None)
+                    if lat and lon:
+                        tiene_lat = bool(fila_mod[lat] and str(fila_mod[lat].strip())) # La primera condicion es para evitar errores si el valor es None
+                        tiene_lon = bool(fila_mod[lon] and str(fila_mod[lon].strip()))
+                        if tiene_lat != tiene_lon:
+                            errores.append("Error: Los cambios dejan una coordenada vacia y otra con valor")
+                    
+                    if errores:
+                        raise ValueError(f"Errores encontrados: {', '.join(errores)}")
+                    
+                    fila = fila_mod
+                    actualizado = True
+                
+                escritor.writerow(fila)
+
+        if not actualizado:
+            if os.path.exists(ruta_tmp):
+                os.remove(ruta_tmp)
+                logger.log_error(dataset,"UPDATE")
+                return f"No se encontro el registro con el id {id}"
+        
+        # Si todo sale bien, el archivo temporal con las modificaciones reemplaza al original
+        os.replace(ruta_tmp, ruta_out)
+        logger.log(dataset, "UPDATE", 1)
+        return "Columnas actualizadas exitosamente"
     
-    # Si se encontro el registro, se escribe el nuevo archivo procesado con la modificacion realizada
-    with open(ruta_out, 'w', encoding='utf-8', newline='') as archivo_out:
-        escritor = csv.DictWriter(archivo_out, fieldnames=campos, delimiter=",")
-        escritor.writeheader()
-        escritor.writerows(registros_actualizados)
-    logger.log(dataset,"UPDATE",1)
-    return "Columnas actualizadas exitosamente"
+    except Exception as e:
+        if os.path.exists(ruta_tmp):
+            os.remove(ruta_tmp)
+        return f"Error: {str(e)}"
