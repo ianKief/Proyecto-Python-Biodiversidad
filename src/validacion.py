@@ -9,7 +9,7 @@ import pycountry
 import re
 from dateutil import parser
 from datetime import datetime
-from .lectura import cant_registros
+from src.lectura import cant_registros
 
 
 def ruta(dataset,archivo):

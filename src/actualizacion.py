@@ -3,9 +3,9 @@ import os
 import pycountry
 from datetime import datetime
 from dateutil import parser
-from .lectura import obtener_ruta
-from . import validacion
-from . import logger
+from src.lectura import obtener_ruta
+from src import validacion
+from src import logger
 
 """
 Este modulo se encarga de la modificación de registros existentes dentro de un dataset

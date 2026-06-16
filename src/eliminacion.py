@@ -1,8 +1,8 @@
 import csv
 import os
-from . import logger
-from .lectura import obtener_ruta
-from . import validacion
+from src import logger
+from src.lectura import obtener_ruta
+from src import validacion
 from dateutil import parser
 
 def identificador(dataset,archivo,valorID,delimitador=","):

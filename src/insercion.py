@@ -1,5 +1,5 @@
-from .lectura import listar_columnas, obtener_ruta
-from .validacion import verificar_rango, no_existe_dato
+from src.lectura import listar_columnas, obtener_ruta
+from src.validacion import verificar_rango, no_existe_dato
 import csv
 import pycountry
 
