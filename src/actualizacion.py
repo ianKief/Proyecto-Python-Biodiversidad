@@ -44,6 +44,8 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
     actualizado = False
     ruta_tmp = str(ruta_out) + '.tmp'
 
+    taxonomia = ["family", "kingdom", "genus", "phylum", "scientificname", "higherClassification","order","class"]
+
     # Primero se lee el archivo original en busqueda del registro que se quiere modificar, verificando que existan el registro y la columna a modificar
     
     try:
@@ -67,18 +69,55 @@ def actualizar_registro(dataset,archivo,id,valorID,columna,valor,delimitador=","
                     fila_mod[columna] = valor
                     errores = []
                     col = columna.lower()
+                    
+                    val_str = str(valor).strip() if valor is not None else ""
+                    # 1. Coordenadas
                     if "latitude" in col:
                         try:
-                            if validacion.verificar_rango(fila_mod[columna],90,-90):
-                                errores.append(f"Latitud {fila_mod[columna]} fuera de rango")
+                            if validacion.verificar_rango(fila_mod[col],90,-90):
+                                errores.append(f"Latitud {fila_mod[col]} fuera de rango")
                         except ValueError:
                             errores.append("Latitud debe ser numerica")
                     elif "longitude" in col:
                         try:
-                            if validacion.verificar_rango(fila_mod[columna],180,-180):
-                                errores.append(f"Longitud {fila_mod[columna]} fuera de rango")
+                            if validacion.verificar_rango(fila_mod[col],180,-180):
+                                errores.append(f"Longitud {fila_mod[col]} fuera de rango")
                         except ValueError:
                             errores.append("Longitud debe ser numerica")
+
+                    # 2. Fechas
+                    elif "date" in col:
+                        if val_str:
+                            try:
+                                fecha_parsed = parser.parse(val_str)
+                                if fecha_parsed.year > datetime.now().year:
+                                    errores.append(f"La fecha '{val_str}' es en el futuro")
+                            except:
+                                errores.append(f"El formato de la fecha '{val_str}' es inválido")
+
+                    # 3. Country Code
+                    elif col == "countrycode":
+                        if val_str:
+                            # upper() para asegurar que 'ar' sea detectado como 'AR'
+                            if pycountry.countries.get(alpha_2=val_str.upper()) is None:
+                                errores.append(f"El código de país '{val_str}' no es válido")
+
+                    # 4. Incertidumbre (coordinateUncertaintyInMeters)
+                    elif col == "coordinateuncertaintyinmeters":
+                        if val_str:
+                            try:
+                                uncert = float(val_str)
+                                if uncert < 0:
+                                    errores.append("La incertidumbre no puede ser negativa")
+                                elif uncert > 1000:
+                                    errores.append("La incertidumbre es demasiado alta (>1000)")
+                            except ValueError:
+                                errores.append("La incertidumbre debe ser un valor numérico")
+
+                    # 5. Información Taxonómica
+                    if col in taxonomia:
+                        if validacion.no_existe_dato(valor):
+                            errores.append(f"El campo taxonómico '{col}' no puede estar vacío")
                     
                     # Crea una lista con todas las columnas que contienen latitud o longitud en su nombre
                     # Toma la primera coincidencia que encuentra o devuelve None si no encuentra ninguna
@@ -160,7 +199,8 @@ def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimi
                     for col_mod, val in nuevos_valores.items():
                         col = col_mod.lower()
                         val_str = str(val).strip() if val is not None else ""
-                        
+
+                        # 1. Coordenadas
                         if "latitude" in col:
                             try:
                                 if validacion.verificar_rango(fila_mod[col_mod],90,-90):
@@ -173,7 +213,41 @@ def actualizar_multiples_campos(dataset,archivo,id,valorID,nuevos_valores,delimi
                                     errores.append(f"Longitud {fila_mod[col_mod]} fuera de rango")
                             except ValueError:
                                 errores.append("Longitud debe ser numerica")
-                    
+
+                        # 2. Fechas
+                        elif "date" in col:
+                            if val_str:
+                                try:
+                                    fecha_parsed = parser.parse(val_str)
+                                    if fecha_parsed.year > datetime.now().year:
+                                        errores.append(f"La fecha '{val_str}' es en el futuro")
+                                except:
+                                    errores.append(f"El formato de la fecha '{val_str}' es inválido")
+
+                        # 3. Country Code
+                        elif col == "countrycode":
+                            if val_str:
+                                # upper() para asegurar que 'ar' sea detectado como 'AR'
+                                if pycountry.countries.get(alpha_2=val_str.upper()) is None:
+                                    errores.append(f"El código de país '{val_str}' no es válido")
+
+                        # 4. Incertidumbre (coordinateUncertaintyInMeters)
+                        elif col == "coordinateuncertaintyinmeters":
+                            if val_str:
+                                try:
+                                    uncert = float(val_str)
+                                    if uncert < 0:
+                                        errores.append("La incertidumbre no puede ser negativa")
+                                    elif uncert > 1000:
+                                        errores.append("La incertidumbre es demasiado alta (>1000)")
+                                except ValueError:
+                                    errores.append("La incertidumbre debe ser un valor numérico")
+
+                        # 5. Información Taxonómica
+                        if col in taxonomia:
+                            if validacion.no_existe_dato(val):
+                                errores.append(f"El campo taxonómico '{col_mod}' no puede estar vacío")
+
                     lat = next((c for c in campos if "latitude" in c.lower()), None)
                     lon = next((c for c in campos if "longitude" in c.lower()), None)
                     if lat and lon:
